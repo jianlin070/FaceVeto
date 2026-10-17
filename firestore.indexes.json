@@ -1,0 +1,19 @@
+{
+  "indexes": [
+    { "collectionGroup": "cases", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "cases", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "owner_uid", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "cases", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "post_id", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "posts", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "posts", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "author_uid", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "notifications", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "uid", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" }] },
+    { "collectionGroup": "face_templates", "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "embedding", "vectorConfig": { "dimension": 512, "flat": {} } }] }
+  ],
+  "fieldOverrides": []
+}
