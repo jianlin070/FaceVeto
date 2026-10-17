@@ -1,0 +1,21 @@
+{
+  "model": "gemini-3.6-flash",
+  "thinking": "low",
+  "n": 48,
+  "hold_precision": 1.0,
+  "hold_recall": 1.0,
+  "false_hold_rate": 0.0,
+  "category_accuracy": 1.0,
+  "per_category": {
+    "benign": 1.0,
+    "gambling_promotion": 1.0,
+    "harassment_or_defamation": 1.0,
+    "impersonation": 1.0,
+    "scam_or_fraud": 1.0,
+    "sexual_or_intimate": 1.0
+  },
+  "latency_p50_ms": 2910.5,
+  "latency_p95_ms": 4234,
+  "errors": 0,
+  "misses": []
+}

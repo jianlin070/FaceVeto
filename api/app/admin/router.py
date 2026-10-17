@@ -81,7 +81,7 @@ def case_detail(case_id: str, _: User = Depends(require_admin)):
             "faces_detected": post.get("faces_detected"), "decision": post.get("decision"),
             "assessment": post.get("assessment"),
             "scan": {k: scan.get(k) for k in ("latency_ms", "detect_ms", "match_ms", "gemini_called",
-                                              "gemini_latency_ms", "gemini_error")},
+                                              "gemini_latency_ms", "gemini_error", "agent_ms", "agent_trace")},
         },
         "timeline": timeline,
     }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { MdArrowBack, MdAutoAwesome, MdDelete, MdCheck, MdDescription, MdDownload, MdPrint, MdVisibility } from 'react-icons/md'
+import { MdArrowBack, MdAutoAwesome, MdDelete, MdCheck, MdDescription, MdDownload, MdPrint, MdSmartToy, MdVisibility } from 'react-icons/md'
 import { api, apiText } from '../lib/api'
 import { categoryLabel, timeAgo } from '../lib/format'
 import { toast } from '../lib/toast'
@@ -115,6 +115,23 @@ export default function AdminCasePage() {
               Decision in {s.latency_ms ?? '-'} ms (detect {s.detect_ms ?? '-'} ms, match {s.match_ms ?? '-'} ms, Gemini {s.gemini_latency_ms ?? '-'} ms).
             </p>
           </section>
+
+          {s.agent_trace && s.agent_trace.length > 0 && (
+            <section className="card p-4" aria-label="Agent trace">
+              <h2 className="flex items-center gap-2 font-semibold"><MdSmartToy className="text-primary" aria-hidden /> Agent trace <span className="text-xs font-normal text-muted">Google ADK, {s.agent_ms} ms</span></h2>
+              <ol className="mt-2 space-y-1 font-mono text-xs">
+                {s.agent_trace.map((t, i) => (
+                  <li key={i} className={t.step === 'error' || t.step === 'fallback' ? 'text-danger' : ''}>
+                    <span className="text-muted">{t.at_ms != null ? `${(t.at_ms / 1000).toFixed(1)}s ` : ''}</span>
+                    {t.step === 'call' && <>call <b>{t.tool}</b>({Object.entries(t.args ?? {}).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ')})</>}
+                    {t.step === 'result' && <>&nbsp;&nbsp;{'->'} {t.tool}: {JSON.stringify(t.result)}</>}
+                    {(t.step === 'final' || t.step === 'error' || t.step === 'fallback') && t.text}
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-2 text-xs text-muted">Tools enforce policy v1: the agent can hold more strictly but cannot publish what the policy holds.</p>
+            </section>
+          )}
 
           <section className="card p-4" aria-label="Actions">
             <h2 className="font-semibold">Actions</h2>

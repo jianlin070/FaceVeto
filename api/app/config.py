@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     enrol_intra_min: float = 0.60
     match_backend: str = "firestore"  # firestore | memory
 
+    use_adk_agent: bool = False
+    agent_timeout_s: float = 30.0
+
     face_model_root: str = "~/.insightface"
     load_face_model: bool = True
 

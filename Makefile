@@ -25,7 +25,7 @@ deploy-api:
 	  --service-account $(SA) --allow-unauthenticated \
 	  --cpu 2 --memory 4Gi --concurrency 4 --timeout 120 \
 	  --min-instances 1 --max-instances 5 --cpu-boost \
-	  --set-env-vars GCP_PROJECT=$(PROJECT),GCP_REGION=$(REGION),GEMINI_MODEL=$(GEMINI_MODEL),GEMINI_LOCATION=global,MEDIA_BUCKET=$(PROJECT)-faceveto-media,DEMO_MODE=true,MATCH_THRESHOLD=0.45,FACE_MODEL_ROOT=/models
+	  --set-env-vars GCP_PROJECT=$(PROJECT),GCP_REGION=$(REGION),GEMINI_MODEL=$(GEMINI_MODEL),GEMINI_LOCATION=global,MEDIA_BUCKET=$(PROJECT)-faceveto-media,DEMO_MODE=true,MATCH_THRESHOLD=0.45,FACE_MODEL_ROOT=/models,USE_ADK_AGENT=true
 
 deploy-web: build-web
 	firebase deploy --only hosting --project $(PROJECT)

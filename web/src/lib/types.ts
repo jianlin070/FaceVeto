@@ -101,7 +101,8 @@ export interface AdminCase {
     faces_detected: number
     decision: { action: string; reason: string; policy_version: string } | null
     assessment: HarmAssessment | null
-    scan: { latency_ms: number | null; detect_ms: number | null; match_ms: number | null; gemini_called: boolean; gemini_latency_ms: number | null; gemini_error: string | null }
+    scan: { latency_ms: number | null; detect_ms: number | null; match_ms: number | null; gemini_called: boolean; gemini_latency_ms: number | null; gemini_error: string | null
+      agent_ms?: number | null; agent_trace?: AgentStep[] | null }
   }
   timeline: { action: string; actor: string; at: string | null; details: Record<string, unknown> }[]
 }
@@ -116,4 +117,13 @@ export interface Stats {
   gemini_calls: number
   scan_latency_ms: { p50: number | null; p95: number | null; mean: number | null }
   gemini_latency_ms: { p50: number | null; p95: number | null }
+}
+
+export interface AgentStep {
+  step: 'call' | 'result' | 'final' | 'error' | 'fallback'
+  tool?: string
+  args?: Record<string, unknown>
+  result?: Record<string, unknown>
+  text?: string
+  at_ms?: number
 }

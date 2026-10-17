@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from app.agent import gemini
+from app.agent import adk_agent, gemini
 from app.agent.policy import NO_MATCH, Decision, decide
 from app.audit import audit
 from app.config import get_settings
@@ -39,12 +39,16 @@ class ScanOutcome:
     gemini_error: str | None = None
     gemini_tokens: dict | None = None
     timings: dict = field(default_factory=dict)
+    agent_trace: list[dict] | None = None  # ADK tool calls, when the agent decided
 
 
 def scan(img: CleanImage, caption: str, author_uid: str, author_age_days: int, approved_by: list[str],
          *, detect: Detect = engine.detect_and_embed, match: MatchFn = matching.top_matches,
-         assess: Assess = gemini.assess_harm, threshold: float | None = None) -> ScanOutcome:
-    threshold = get_settings().match_threshold if threshold is None else threshold
+         assess: Assess = gemini.assess_harm, threshold: float | None = None,
+         use_agent: bool | None = None) -> ScanOutcome:
+    s = get_settings()
+    threshold = s.match_threshold if threshold is None else threshold
+    use_agent = s.use_adk_agent if use_agent is None else use_agent
     t0 = time.perf_counter()
     faces = detect(img.bgr)
     t_detect = time.perf_counter()
@@ -63,9 +67,15 @@ def scan(img: CleanImage, caption: str, author_uid: str, author_age_days: int, a
         "matched_face_is_not_poster": True,
         "platform": "general social network, JAPAC",
     }
-    res = assess(img.jpeg, caption, context)
-    return ScanOutcome(len(faces), matched, owners, decide(res.assessment), res.assessment, True,
-                       res.latency_ms, res.error, res.tokens, timings)
+    if use_agent:
+        run = adk_agent.moderate(img.jpeg, caption, context, assess)
+        res, decision, trace = run.assess, run.decision, run.trace
+        timings["agent_ms"] = run.latency_ms
+    else:
+        res = assess(img.jpeg, caption, context)
+        decision, trace = decide(res.assessment), None
+    return ScanOutcome(len(faces), matched, owners, decision, res.assessment, True,
+                       res.latency_ms, res.error, res.tokens, timings, trace)
 
 
 def apply_decision(post_id: str, img: CleanImage, author: dict, out: ScanOutcome, started_ms: float) -> str:
@@ -85,6 +95,7 @@ def apply_decision(post_id: str, img: CleanImage, author: dict, out: ScanOutcome
             "matched": [{"uid": u, "similarity": s} for u, s in out.matched.items()],
             "gemini_called": out.gemini_called, "gemini_latency_ms": out.gemini_latency_ms,
             "gemini_error": out.gemini_error, "gemini_tokens": out.gemini_tokens, **out.timings,
+            "agent_trace": out.agent_trace,
         },
         "assessment": out.assessment.model_dump(mode="json") if out.assessment else None,
         "decision": {"action": out.decision.action, "reason": out.decision.reason,
