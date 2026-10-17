@@ -57,6 +57,7 @@ Alerts reach the owner in real time through a Firestore listener on their own no
 - **Fail closed:** if Gemini times out, errors, or its safety filter blocks the input, the post is held for human review.
 - **Privacy in prompts:** Gemini never receives the matched person's identity, only "a registered person who is not the poster".
 - **Cost gating:** Gemini only runs when a protected face of someone other than the poster is found.
+- **Google ADK agent:** with `USE_ADK_AGENT=true` (on in the live demo), an ADK agent orchestrates the decision through tools (`get_poster_signals`, `assess_content`, `hold_post`, `publish_post`). The tools enforce the policy, so the agent can hold more strictly but can never publish what the policy holds; if the agent fails, the deterministic policy decides. The tool-call trace is shown in the admin console.
 
 ## Privacy and safety by design
 
@@ -72,7 +73,16 @@ Alerts reach the owner in real time through a Firestore listener on their own no
 
 ## Benchmarks
 
-See [`eval/RESULTS.md`](eval/RESULTS.md) for the full table and how to reproduce it.
+| Metric | Result |
+|---|---|
+| Face match TAR at FAR 0.1% (LFW, 3.18M impostor pairs) | 99.8% |
+| Production threshold 0.45 | TAR 98.0%, FAR 0.0004% |
+| Harm hold precision / recall (48 synthetic test posts) | 100% / 100%, 0% false holds on benign posts |
+| Decision latency without a protected face | p50 0.38 s |
+| Decision latency with Gemini | p50 4.3 s, p95 8.1 s |
+| Cost per 1,000 scans (1% match rate) | about $0.03 |
+
+See [`eval/RESULTS.md`](eval/RESULTS.md) for the full table, caveats and how to reproduce it.
 
 ## Local development
 

@@ -1,0 +1,40 @@
+{
+  "model": "insightface buffalo_l (RetinaFace + ArcFace R50, 512-d), CPU",
+  "people_set": {
+    "identities": 158,
+    "images": 2532,
+    "detect_rate": 0.9964580873671782,
+    "genuine_pairs": 20188,
+    "impostor_pairs": 3184058
+  },
+  "tar_at_far_1pct": {
+    "tar": 0.9982167624331286,
+    "threshold": 0.15270890295505524
+  },
+  "tar_at_far_0_1pct": {
+    "tar": 0.9978700217951258,
+    "threshold": 0.21706217527389526
+  },
+  "lfw_test_pairs": {
+    "pairs_scored": 989,
+    "at_0.45": {
+      "threshold": 0.45,
+      "accuracy": 0.9908998988877654,
+      "tar": 0.9817073170731707,
+      "far": 0.0
+    },
+    "at_far_0_1pct_threshold": {
+      "threshold": 0.217,
+      "accuracy": 0.9959555106167847,
+      "tar": 0.991869918699187,
+      "far": 0.0
+    }
+  },
+  "recommended_match_threshold": 0.45,
+  "people_set_at_0.45": {
+    "threshold": 0.45,
+    "tar": 0.9799385773726966,
+    "far": 4.082840199518979e-06,
+    "false_accepts": 13
+  }
+}

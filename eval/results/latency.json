@@ -1,40 +1,40 @@
 {
-  "scans": 25,
-  "gemini_calls": 17,
+  "scans": 42,
+  "gemini_calls": 28,
   "gemini_errors": 0,
   "decision_ms_all": {
     "p50": 3434,
-    "p95": 4971
+    "p95": 7260
   },
   "decision_ms_no_gemini": {
-    "p50": 500,
-    "p95": 1428,
-    "n": 8
+    "p50": 384,
+    "p95": 544,
+    "n": 14
   },
   "decision_ms_with_gemini": {
-    "p50": 4000,
-    "p95": 4971,
-    "n": 17
+    "p50": 4273,
+    "p95": 8085,
+    "n": 28
   },
   "gemini_ms": {
-    "p50": 3428,
+    "p50": 3061,
     "p95": 4569
   },
   "face_detect_embed_ms": {
-    "p50": 446,
-    "p95": 515
+    "p50": 426,
+    "p95": 597
   },
   "tokens_per_gemini_call": {
-    "in": 2016,
-    "out": 407,
-    "n": 8
+    "in": 2017,
+    "out": 381,
+    "n": 19
   },
-  "gemini_calls_per_scan_in_this_sample": 0.68,
+  "gemini_calls_per_scan_in_this_sample": 0.667,
   "price_usd_per_1m_tokens": {
     "in": 0.75,
     "out": 3.75
   },
-  "usd_per_gemini_call": 0.003038,
-  "usd_per_1000_scans_at_1pct_match_rate": 0.0304,
-  "usd_per_1000_scans_worst_case_all_matched": 3.038
+  "usd_per_gemini_call": 0.002942,
+  "usd_per_1000_scans_at_1pct_match_rate": 0.0294,
+  "usd_per_1000_scans_worst_case_all_matched": 2.942
 }

@@ -121,6 +121,13 @@ def main():
         stats = admin.get("/api/admin/stats")
         check("admin stats reachable", stats.status_code == 200, stats.text[:160])
         check("non-admin blocked from admin API", poster.get("/api/admin/cases").status_code == 403)
+        open_cases = admin.get("/api/admin/cases", params={"status": "awaiting_owner"}).json()
+        mine = next((c for c in open_cases if c["post_id"] == r.json().get("post_id")), None)
+        detail = admin.get(f"/api/admin/cases/{mine['case_id']}").json() if mine else {}
+        assessment = (detail.get("post") or {}).get("assessment") or {}
+        trace = (detail.get("post") or {}).get("scan", {}).get("agent_trace") or []
+        tools = [t["tool"] for t in trace if t.get("step") == "call"]
+        check("admin case shows Gemini assessment", bool(assessment.get("reasoning")), f"agent tools: {tools or 'agent off'}")
     except Exception as e:  # demo login unavailable (DEMO_MODE off or local signer missing)
         check("admin checks", False, f"skipped: {type(e).__name__}")
 
