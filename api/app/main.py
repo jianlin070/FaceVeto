@@ -6,10 +6,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.admin.router import router as admin_router
+from app.agent import gemini
 from app.config import get_settings
+from app.db import firebase_app, get_bucket, get_db
+from app.cases.router import router as cases_router
 from app.demo.router import router as demo_router
 from app.enrolment.router import router as enrolment_router
 from app.face import engine
+from app.media.router import router as media_router
+from app.scan.router import router as posts_router
 from app.users.router import router as users_router
 
 settings = get_settings()
@@ -34,6 +40,8 @@ logging.basicConfig(level=settings.log_level, handlers=[handler], force=True)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Build shared clients once, before requests arrive on several threads.
+    firebase_app(), get_db(), get_bucket(), gemini.client()
     if settings.load_face_model:
         engine.get_app()  # load at startup so the first scan is not slow
     yield
@@ -51,6 +59,10 @@ if settings.allowed_origins:
 
 app.include_router(users_router)
 app.include_router(enrolment_router)
+app.include_router(posts_router)
+app.include_router(media_router)
+app.include_router(cases_router)
+app.include_router(admin_router)
 if settings.demo_mode:
     app.include_router(demo_router)
 

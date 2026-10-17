@@ -16,7 +16,10 @@ def firebase_app() -> firebase_admin.App:
     options = {"projectId": s.gcp_project}
     if s.signer_service_account:
         options["serviceAccountId"] = s.signer_service_account
-    return firebase_admin.initialize_app(options=options)
+    try:
+        return firebase_admin.get_app()
+    except ValueError:
+        return firebase_admin.initialize_app(options=options)
 
 
 @lru_cache

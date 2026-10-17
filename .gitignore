@@ -28,3 +28,4 @@ scikit_learn_data/
 
 # OS
 .DS_Store
+eval/data/harm_set/*.jpg

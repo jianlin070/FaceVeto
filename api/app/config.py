@@ -8,8 +8,10 @@ class Settings(BaseSettings):
 
     gcp_project: str = "faceveto-2026"
     gcp_region: str = "asia-southeast1"
-    gemini_model: str = "gemini-3.5-flash"
+    gemini_model: str = "gemini-3.6-flash"
     gemini_location: str = "global"
+    gemini_timeout_ms: int = 20000
+    gemini_thinking: str = "low"  # minimal | low | medium | high, or "" for the model default
     media_bucket: str = "faceveto-2026-faceveto-media"
 
     match_threshold: float = 0.45

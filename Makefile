@@ -1,7 +1,7 @@
 PROJECT ?= faceveto-2026
 REGION ?= asia-southeast1
 SA ?= faceveto-api@$(PROJECT).iam.gserviceaccount.com
-GEMINI_MODEL ?= gemini-3.5-flash
+GEMINI_MODEL ?= gemini-3.6-flash
 
 .PHONY: dev api web test build-web deploy-api deploy-web deploy seed eval
 
