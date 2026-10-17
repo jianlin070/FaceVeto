@@ -1,7 +1,30 @@
-# private working files (kept local)
-CLAUDE.md
-docs/PLAN.md
-docs/HANDOFF.md
-docs/PROGRESS.md
-docs/MORNING_CHECKLIST.md
-.claude/
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+web/dist/
+
+# Env and secrets
+.env
+.env.*
+!web/.env
+*.key.json
+*-sa.json
+service-account*.json
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+
+# Eval data caches
+eval/.cache/
+eval/data/lfw/
+scikit_learn_data/
+
+# OS
+.DS_Store
