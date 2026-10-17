@@ -97,7 +97,9 @@ async def _run(run: AgentRun, jpeg: bytes, caption: str, context: dict, assess) 
             run.trace.append({"step": "call", "tool": fc.name, "args": dict(fc.args or {}), "at_ms": ms})
         for fr in ev.get_function_responses():
             resp = dict(fr.response or {})
-            summary = {k: resp[k] for k in ("ok", "action", "error", "category", "severity", "policy_action") if k in resp}
+            keep = ("ok", "action", "error", "category", "severity", "policy_action",
+                    "poster_account_age_days", "faces_in_image")
+            summary = {k: resp[k] for k in keep if k in resp}
             run.trace.append({"step": "result", "tool": fr.name, "result": summary, "at_ms": ms})
         if run.decision is not None:
             break  # decided: skip the agent's closing sentence to save a model round trip
