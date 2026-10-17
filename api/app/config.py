@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     load_face_model: bool = True
 
     demo_mode: bool = False
+    # Service account used to sign custom tokens when running with user ADC locally.
+    # On Cloud Run the runtime service account is discovered automatically.
+    signer_service_account: str = ""
     allowed_origins: str = ""
     log_level: str = "INFO"
 
