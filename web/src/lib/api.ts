@@ -46,3 +46,13 @@ export async function fetchImage(path: string): Promise<string> {
   if (!res.ok) throw new ApiError(res.status, 'image unavailable')
   return URL.createObjectURL(await res.blob())
 }
+
+/** Fetch an authenticated text resource (evidence pack HTML or Markdown). */
+export async function apiText(path: string): Promise<string> {
+  const res = await fetch(path, { headers: await authHeader() })
+  if (!res.ok) {
+    toast('Could not load that document.', 'error')
+    throw new ApiError(res.status, 'document unavailable')
+  }
+  return res.text()
+}

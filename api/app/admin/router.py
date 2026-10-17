@@ -124,7 +124,8 @@ def evidence(case_id: str, format: str = "json", regenerate: bool = False, _: Us
     if format == "html":
         # The report quotes untrusted captions: escape raw HTML and forbid scripts entirely.
         body = markdown.markdown(html.escape(md, quote=False), extensions=["tables"])
-        page = f"""<!doctype html><html><head><meta charset="utf-8"><title>FaceVeto evidence pack {case_id}</title>
+        page = f"""<!doctype html><html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>FaceVeto evidence pack {case_id}</title>
 <style>body{{font:15px/1.55 Arial,sans-serif;color:#202124;max-width:780px;margin:32px auto;padding:0 16px}}
 h1{{font-size:22px}}h2{{font-size:17px;margin-top:24px;border-bottom:1px solid #ddd;padding-bottom:4px}}
 table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding:6px;text-align:left;font-size:13px}}

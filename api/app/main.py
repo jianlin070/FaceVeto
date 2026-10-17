@@ -57,6 +57,16 @@ if settings.allowed_origins:
         allow_headers=["*"],
     )
 
+
+@app.middleware("http")
+async def no_store_by_default(request, call_next):
+    # Firebase Hosting's CDN caches responses without Cache-Control (even a 404 for max-age=600).
+    # API answers depend on the caller, so nothing is cacheable unless a route says so.
+    response = await call_next(request)
+    response.headers.setdefault("Cache-Control", "no-store")
+    return response
+
+
 app.include_router(users_router)
 app.include_router(enrolment_router)
 app.include_router(posts_router)

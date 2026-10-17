@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { browserPopupRedirectResolver, browserSessionPersistence, initializeAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 const app = initializeApp({
@@ -11,5 +11,9 @@ const app = initializeApp({
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 })
 
-export const auth = getAuth(app)
+// Per-tab sessions: Alice, Bob and Admin can be signed in side by side in one browser for the demo.
+export const auth = initializeAuth(app, {
+  persistence: browserSessionPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver,
+})
 export const db = getFirestore(app)
