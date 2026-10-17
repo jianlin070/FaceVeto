@@ -65,7 +65,7 @@ class AssessResult:
     assessment: HarmAssessment | None  # None means the call failed: the policy fails closed
     latency_ms: int
     error: str | None = None
-    tokens: int | None = None
+    tokens: dict | None = None  # {"in": prompt tokens, "out": output + thinking tokens}
 
 
 SAFETY_BLOCK_ASSESSMENT = HarmAssessment(
@@ -90,7 +90,10 @@ def assess_harm(jpeg: bytes, caption: str, context: dict) -> AssessResult:
         log.warning("gemini assess failed: %s: %s", type(e).__name__, str(e)[:300], extra={"fields": {"latency_ms": ms}})
         return AssessResult(None, ms, f"gemini_error: {type(e).__name__}")
     ms = int((time.perf_counter() - t0) * 1000)
-    tokens = resp.usage_metadata.total_token_count if resp.usage_metadata else None
+    u = resp.usage_metadata
+    # Output includes thinking tokens, which are billed as output.
+    tokens = {"in": u.prompt_token_count or 0,
+              "out": (u.candidates_token_count or 0) + (u.thoughts_token_count or 0)} if u else None
     if _blocked(resp):
         return AssessResult(SAFETY_BLOCK_ASSESSMENT, ms, "safety_block", tokens)
     parsed = resp.parsed

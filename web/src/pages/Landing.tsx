@@ -37,7 +37,7 @@ export default function Landing() {
       <header className="bg-ink text-white">
         <div className="mx-auto max-w-5xl px-5 pb-14 pt-10">
           <div className="flex items-center gap-2 text-lg font-semibold">
-            <img src="/favicon.svg" alt="" className="h-8 w-8" /> FaceVeto
+            <img src="/favicon.svg" alt="" width={32} height={32} className="h-8 w-8" /> FaceVeto
           </div>
           <h1 className="mt-10 max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">Your face, your veto.</h1>
           <p className="mt-4 max-w-2xl text-lg text-gray-300">
@@ -56,8 +56,8 @@ export default function Landing() {
         <section className="card -mt-8 p-5 sm:p-6" aria-labelledby="demo-h">
           <h2 id="demo-h" className="text-lg font-semibold">Try the demo in one click</h2>
           <p className="mt-1 text-sm text-muted">
-            The prototype simulates a social app called Lepak with FaceVeto built in. Open Alice and Admin in two windows
-            (one incognito) to watch an alert arrive in real time. <Link to="/demo" className="text-primary underline">Demo guide</Link>
+            The prototype simulates a social app called Lepak with FaceVeto built in. Each browser tab keeps its own login,
+            so open Alice and Admin side by side to watch an alert arrive in real time. <Link to="/demo" className="text-primary underline">Demo guide</Link>
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {DEMO.map((d) => (

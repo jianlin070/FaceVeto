@@ -37,7 +37,7 @@ class ScanOutcome:
     gemini_called: bool = False
     gemini_latency_ms: int | None = None
     gemini_error: str | None = None
-    gemini_tokens: int | None = None
+    gemini_tokens: dict | None = None
     timings: dict = field(default_factory=dict)
 
 
