@@ -28,18 +28,9 @@ If a protected face appears in a harmless post, it goes live and the person gets
 
 Editing a caption runs the same check again, because new wording can turn a harmless photo into a scam or betting ad. Earlier "It's me" approvals do not carry over to the new text. Text-only posts have no face to protect and publish straight away. Posts under review cannot be edited or deleted until a decision is made.
 
-```
-Browser (React, MediaPipe liveness)  ──/api/**──▶  Firebase Hosting rewrite  ──▶  Cloud Run: faceveto-api (FastAPI)
-                                                                                    │
-           enrolment ── InsightFace ArcFace (CPU, baked into the image) ────────────┤
-           scan ─────── detect + embed faces ─▶ Firestore vector search (1:N) ──────┤
-           agent ────── Vertex AI Gemini: structured harm assessment, alert text, evidence pack
-           cases ────── owner decisions, admin actions, audit log
-                                                                                    │
-           Firestore (users, face_templates[vector], posts, cases, notifications, audit_logs)
-           Cloud Storage (posts/, quarantine/ with 30 day auto delete)
-Alerts reach the owner in real time through a Firestore listener on their own notifications.
-```
+![FaceVeto architecture on Google Cloud](docs/architecture.png)
+
+Solid lines are live in the deployed prototype; dashed lines are the production roadmap. Regenerate with `python scripts/architecture_diagram.py` (needs Graphviz and the `diagrams` package).
 
 ### Google Cloud services
 - **Cloud Run** for the API (one service, modules `enrolment`, `scan`, `agent`, `cases`, `admin`).
@@ -48,6 +39,9 @@ Alerts reach the owner in real time through a Firestore listener on their own no
 - **Firebase Authentication** (email/password, Google) and **Firebase Hosting**.
 - **Cloud Storage** for images, with a lifecycle rule that deletes quarantined images after 30 days.
 - **Cloud Build / Artifact Registry** for source deploys, **Cloud Logging** for structured JSON logs.
+- **BigQuery** for trust and safety analytics: a Cloud Logging sink exports the API's structured logs (decisions, harm categories, latency, owner responses; never faces, embeddings, tokens or images). Example queries are in [`eval/analytics.sql`](eval/analytics.sql).
+- **Cloud Monitoring** uptime check on the live `/api/healthz` endpoint.
+- **IAM Workload Identity Federation** for keyless deploys from GitHub Actions (workflow in `.github/workflows`, currently paused).
 
 ## AI design
 
@@ -88,7 +82,7 @@ See [`eval/RESULTS.md`](eval/RESULTS.md) for the full table, caveats and how to 
 
 ## Local development
 
-Requirements: Python 3.11, Node 22, gcloud and Firebase CLIs, Application Default Credentials for a project with Firestore and Vertex AI. New teammates: follow [`docs/SETUP.md`](docs/SETUP.md) for a step by step setup from a fresh machine.
+Requirements: Python 3.11, Node 22, gcloud and Firebase CLIs, Application Default Credentials for a project with Firestore and Vertex AI.
 
 ```bash
 python3.11 -m venv api/.venv && api/.venv/bin/pip install -r api/requirements-dev.txt

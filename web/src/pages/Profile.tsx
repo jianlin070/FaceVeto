@@ -1,13 +1,11 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { MdAdminPanelSettings, MdChevronRight, MdLogout, MdShield, MdVerifiedUser, MdVolumeUp } from 'react-icons/md'
+import { MdAdminPanelSettings, MdChevronRight, MdGridView, MdLogout, MdShield, MdVerifiedUser, MdVolumeUp } from 'react-icons/md'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { playChime, setSoundEnabled, soundEnabled } from '../lib/sound'
 import { toast } from '../lib/toast'
-import type { Post } from '../lib/types'
 import Avatar from '../components/Avatar'
-import PostCard from '../components/PostCard'
 import ProfileFields, { LANGS, type ProfileValues } from '../components/ProfileFields'
 import Spinner from '../components/Spinner'
 
@@ -33,15 +31,10 @@ function Row({ icon, label, detail, onClick, to, danger, on, children }: {
 export default function Profile() {
   const { me, fbUser, refreshMe, signOut } = useAuth()
   const nav = useNavigate()
-  const [posts, setPosts] = useState<Post[] | null>(null)
   const [editing, setEditing] = useState<ProfileValues | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [sound, setSound] = useState(soundEnabled)
-
-  useEffect(() => {
-    api<Post[]>('/api/posts/mine').then(setPosts).catch(() => setPosts([]))
-  }, [])
 
   if (!me) return <Spinner />
   const protectedFace = me.protection.status === 'active'
@@ -113,6 +106,7 @@ export default function Profile() {
       </Link>
 
       <section aria-label="Settings" className="mt-4 divide-y divide-line border-y border-line">
+        <Row icon={<MdGridView />} label="Your posts" detail="In your feed, including posts under review" to="/feed?tab=mine" />
         <Row icon={<MdVolumeUp />} label="Notification sound" detail="Plays when a new alert arrives" on={sound}
           onClick={() => { setSoundEnabled(!sound); setSound(!sound); if (!sound) playChime() }}>
           <span aria-hidden
@@ -124,13 +118,6 @@ export default function Profile() {
         <Row icon={<MdLogout />} label="Sign out" danger onClick={async () => { await signOut(); nav('/') }} />
       </section>
 
-      <h2 className="px-4 pb-1 pt-6 text-sm font-semibold text-muted">Your posts</h2>
-      {posts === null ? <Spinner /> : posts.length === 0 ? (
-        <p className="p-8 text-center text-sm text-muted">You have not posted yet.</p>
-      ) : posts.map((p) => (
-        <PostCard key={p.post_id} post={p} showStatus onChange={(u) => setPosts((xs) => xs && xs.map((x) => x.post_id === u.post_id ? u : x))}
-          onDelete={(id) => setPosts((xs) => xs && xs.filter((x) => x.post_id !== id))} />
-      ))}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { MdChevronRight, MdShield } from 'react-icons/md'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -20,20 +20,25 @@ function PostSkeleton() {
   )
 }
 
+const TABS = [{ value: 'all', label: 'Everyone' }, { value: 'mine', label: 'Your posts' }] as const
+
 export default function Feed() {
   const { me } = useAuth()
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'mine' ? 'mine' : 'all'
   const [posts, setPosts] = useState<Post[] | null>(null)
 
   const load = useCallback(async () => {
     try {
+      if (tab === 'mine') { setPosts(await api<Post[]>('/api/posts/mine')); return }
       // Your own posts that are still under review appear in your feed (only you see them), like other apps do.
       const [feed, mine] = await Promise.all([api<Post[]>('/api/feed'), api<Post[]>('/api/posts/mine', { quiet: true }).catch(() => [])])
       const pending = mine.filter((p) => p.status === 'under_review' || p.status === 'processing')
       setPosts([...pending, ...feed].sort((a, b) => Date.parse(b.created_at ?? '0') - Date.parse(a.created_at ?? '0')))
     } catch { setPosts([]) }
-  }, [])
+  }, [tab])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { setPosts(null); load() }, [load])
 
   function changed(p: Post) {
     setPosts((xs) => xs && xs.map((x) => x.post_id === p.post_id ? p : x))
@@ -49,12 +54,21 @@ export default function Feed() {
         </Link>
       )}
       <Composer onPosted={load} />
+      <div role="tablist" aria-label="Posts" className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 flex border-b border-line bg-white/90 backdrop-blur">
+        {TABS.map((t) => (
+          <button key={t.value} role="tab" aria-selected={tab === t.value}
+            onClick={() => setParams(t.value === 'all' ? {} : { tab: t.value }, { replace: true })}
+            className={`flex flex-1 justify-center py-3 text-sm ${tab === t.value ? 'font-semibold text-ink' : 'text-muted hover:bg-surface'}`}>
+            <span className={`relative ${tab === t.value ? 'after:absolute after:-bottom-3 after:left-0 after:h-1 after:w-full after:rounded-full after:bg-primary' : ''}`}>{t.label}</span>
+          </button>
+        ))}
+      </div>
       {posts === null ? (
         <div role="status" aria-label="Loading posts"><PostSkeleton /><PostSkeleton /></div>
       ) : posts.length === 0 ? (
-        <p className="p-10 text-center text-sm text-muted">Nothing here yet. Be the first to post.</p>
+        <p className="p-10 text-center text-sm text-muted">{tab === 'mine' ? 'You have not posted yet.' : 'Nothing here yet. Be the first to post.'}</p>
       ) : posts.map((p) => (
-        <PostCard key={p.post_id} post={p} showStatus={p.is_mine} onChange={changed}
+        <PostCard key={p.post_id} post={p} showStatus={tab === 'mine' || p.is_mine} onChange={changed}
           onDelete={(id) => setPosts((xs) => xs && xs.filter((x) => x.post_id !== id))} />
       ))}
     </div>
