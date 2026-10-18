@@ -62,7 +62,12 @@ if [ $deploy_web = yes ]; then
   [ "$(curl -fsS "$URL/version.txt" | tr -d '[:space:]')" = "$HEAD_SHA" ] && ok "$HEAD_SHA" || { echo "mismatch"; exit 1; }
 fi
 if [ $deploy_api = yes ]; then
-  step "End-to-end checks"; run e2e api/.venv/bin/python scripts/e2e_demo.py
+  step "End-to-end checks"
+  if ! api/.venv/bin/python scripts/e2e_demo.py >"$LOGS/e2e.log" 2>&1; then
+    # Retry once only if it died before any check ran (a network blip), so no test data is left half made.
+    grep -qE '^(PASS|FAIL) ' "$LOGS/e2e.log" && fail e2e
+    run e2e api/.venv/bin/python scripts/e2e_demo.py
+  fi
   ok "$(grep -E 'checks passed' "$LOGS/e2e.log")"
 fi
 echo "Done. Live: $URL   Logs: $LOGS"
