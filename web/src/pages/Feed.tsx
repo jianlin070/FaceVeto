@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { MdChevronRight, MdShield } from 'react-icons/md'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -22,20 +22,21 @@ function PostSkeleton() {
 
 export default function Feed() {
   const { me } = useAuth()
-  const nav = useNavigate()
   const [posts, setPosts] = useState<Post[] | null>(null)
 
   const load = useCallback(async () => {
     try {
-      setPosts(await api<Post[]>('/api/feed'))
+      // Your own posts that are still under review appear in your feed (only you see them), like other apps do.
+      const [feed, mine] = await Promise.all([api<Post[]>('/api/feed'), api<Post[]>('/api/posts/mine', { quiet: true }).catch(() => [])])
+      const pending = mine.filter((p) => p.status === 'under_review' || p.status === 'processing')
+      setPosts([...pending, ...feed].sort((a, b) => Date.parse(b.created_at ?? '0') - Date.parse(a.created_at ?? '0')))
     } catch { setPosts([]) }
   }, [])
 
   useEffect(() => { load() }, [load])
 
   function changed(p: Post) {
-    // A post that went back under review leaves the public feed; it stays on the author's profile.
-    setPosts((xs) => xs && (p.status !== 'published' ? xs.filter((x) => x.post_id !== p.post_id) : xs.map((x) => x.post_id === p.post_id ? p : x)))
+    setPosts((xs) => xs && xs.map((x) => x.post_id === p.post_id ? p : x))
   }
 
   return (
@@ -47,13 +48,13 @@ export default function Feed() {
           <MdChevronRight size={22} className="shrink-0" aria-hidden />
         </Link>
       )}
-      <Composer onPosted={(s) => { if (s === 'published') load(); else nav('/profile') }} />
+      <Composer onPosted={load} />
       {posts === null ? (
         <div role="status" aria-label="Loading posts"><PostSkeleton /><PostSkeleton /></div>
       ) : posts.length === 0 ? (
         <p className="p-10 text-center text-sm text-muted">Nothing here yet. Be the first to post.</p>
       ) : posts.map((p) => (
-        <PostCard key={p.post_id} post={p} onChange={changed}
+        <PostCard key={p.post_id} post={p} showStatus={p.is_mine} onChange={changed}
           onDelete={(id) => setPosts((xs) => xs && xs.filter((x) => x.post_id !== id))} />
       ))}
     </div>

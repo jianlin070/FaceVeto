@@ -70,7 +70,7 @@ export default function Composer({ onPosted }: { onPosted: (status: string) => v
     fd.append('caption', caption)
     try {
       const r = await api<{ post_id: string; status: string }>('/api/posts', { method: 'POST', body: fd })
-      toast(r.status === 'published' ? 'Posted' : 'Your post is under review. You can see it on your profile.', r.status === 'published' ? 'success' : 'info')
+      toast(r.status === 'published' ? 'Posted' : 'Your post is under review', r.status === 'published' ? 'success' : 'info')
       pick(null); setCaption('')
       onPosted(r.status)
     } finally {
