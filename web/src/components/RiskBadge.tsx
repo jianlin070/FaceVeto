@@ -3,10 +3,5 @@ const TONE: Record<string, string> = {
 }
 
 export default function RiskBadge({ severity }: { severity: string }) {
-  return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${TONE[severity] ?? TONE.none}`}>{severity}</span>
-}
-
-export const STATUS_LABEL: Record<string, string> = {
-  awaiting_owner: 'Awaiting owner', owner_not_me: 'Owner: Not me', owner_its_me: 'Owner: It\'s me',
-  removed: 'Removed', released: 'Released',
+  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${TONE[severity] ?? TONE.none}`}>{severity}</span>
 }

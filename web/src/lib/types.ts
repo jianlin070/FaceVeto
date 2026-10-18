@@ -91,6 +91,8 @@ export interface AdminCase {
   owner_response: { value: string; at: string | null } | null
   admin_action: { value: string; by: string; at: string | null; note: string } | null
   has_evidence: boolean
+  allowed_actions: ('takedown' | 'release')[]
+  admin_handle: string | null
   owner: { handle: string; display_name: string }
   post: {
     post_id: string

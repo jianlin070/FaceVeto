@@ -1,18 +1,46 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { MdArrowBack, MdAutoAwesome, MdDelete, MdCheck, MdDescription, MdDownload, MdPrint, MdSmartToy, MdVisibility } from 'react-icons/md'
+import { MdArrowBack, MdAutoAwesome, MdDelete, MdCheck, MdDescription, MdDownload, MdLock, MdPrint, MdSmartToy, MdVisibility } from 'react-icons/md'
 import { api, apiText } from '../lib/api'
 import { categoryLabel, timeAgo } from '../lib/format'
 import { toast } from '../lib/toast'
 import type { AdminCase } from '../lib/types'
 import AuthImage from '../components/AuthImage'
-import RiskBadge, { STATUS_LABEL } from '../components/RiskBadge'
+import RiskBadge from '../components/RiskBadge'
+import CaseStatusPill, { toneOf } from '../components/CaseStatus'
+import { useAuth } from '../lib/auth'
 import Spinner from '../components/Spinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 const ACTION_LABEL: Record<string, string> = {
-  post_held: 'FaceVeto held the post', owner_not_me: 'Owner: Not me', owner_its_me: 'Owner: It\'s me',
-  admin_takedown: 'Admin took it down', admin_release: 'Admin released it',
+  post_held: 'FaceVeto held the post', owner_not_me: 'Owner said Not me: taken down', owner_its_me: 'Owner said It\'s me: allowed',
+  admin_takedown: 'Admin took it down', admin_release: 'Admin released it', post_edited: 'Poster edited the caption',
+  post_deleted: 'Poster deleted the post',
+}
+const DOT: Record<string, string> = {
+  post_held: 'bg-warning', owner_not_me: 'bg-danger', admin_takedown: 'bg-danger', owner_its_me: 'bg-success',
+  admin_release: 'bg-success', post_deleted: 'bg-gray-400',
+}
+const BANNER = {
+  pending: 'border-warning bg-warning/10', removed: 'border-danger bg-danger/5', live: 'border-success bg-success/5', gone: 'border-gray-300 bg-surface',
+}
+
+/** What happened, who decided and when, in one sentence for the reviewer. */
+function summary(c: AdminCase, myUid?: string): string {
+  const owner = `@${c.owner.handle}`
+  const admin = c.admin_action ? (c.admin_action.by === myUid ? 'you' : `@${c.admin_handle ?? 'an admin'}`) : ''
+  const when = (t?: string | null) => (t ? ` ${timeAgo(t)}` : '')
+  const note = c.admin_action?.note ? ` Note: "${c.admin_action.note}"` : ''
+  if (c.post.status === 'deleted') return 'The poster deleted this post. Nothing else to do.'
+  switch (c.status) {
+    case 'awaiting_owner':
+      if (c.post.status === 'held') return `Held before anyone saw it. Waiting for ${owner} to say Not me or It's me. You can act now if it is urgent.`
+      return `Waiting for ${owner}, but the post is already ${c.post.status === 'removed' ? 'taken down' : 'live'} (another person in the photo decided).`
+    case 'owner_not_me': return `${owner} said Not me${when(c.owner_response?.at)}. The post was taken down and an evidence pack prepared. The owner's veto is final.`
+    case 'owner_its_me': return `${owner} said It's me${when(c.owner_response?.at)}, so the post is live. You can still take it down if it breaks other rules.`
+    case 'removed': return `Taken down by ${admin}${when(c.admin_action?.at)}.${note}`
+    case 'released': return `Released by ${admin}${when(c.admin_action?.at)}. The post is live.${note}`
+  }
 }
 
 function download(name: string, text: string, type: string) {
@@ -24,6 +52,7 @@ function download(name: string, text: string, type: string) {
 
 export default function AdminCasePage() {
   const { id } = useParams()
+  const { me } = useAuth()
   const [c, setC] = useState<AdminCase | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [note, setNote] = useState('')
@@ -56,21 +85,29 @@ export default function AdminCasePage() {
   if (!c) return <Spinner />
   const a = c.post.assessment
   const s = c.post.scan
+  const tone = toneOf(c.status, c.post.status)
+  const can = (x: 'takedown' | 'release') => c.allowed_actions.includes(x)
 
   return (
     <div className="space-y-4">
-      <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-primary"><MdArrowBack aria-hidden /> Queue</Link>
+      <Link to="/admin" className="inline-flex items-center gap-1 rounded-full py-1 pr-3 text-sm font-medium text-primary hover:bg-primary/5"><MdArrowBack aria-hidden /> Review queue</Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">{categoryLabel(c.category)}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{categoryLabel(c.category)}</h1>
         <RiskBadge severity={c.severity} />
-        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium ring-1 ring-gray-300">{STATUS_LABEL[c.status] ?? c.status}</span>
-        <span className="text-sm text-muted">Case {c.case_id} · {timeAgo(c.created_at)}</span>
+        <CaseStatusPill status={c.status} postStatus={c.post.status} large />
+        <span className="text-sm text-muted">Case {c.case_id} · opened {timeAgo(c.created_at)}</span>
       </div>
+      <div role="status" className={`rounded-2xl border-l-4 px-4 py-3 text-sm ${BANNER[tone]}`}>{summary(c, me?.uid)}</div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <section className="card space-y-3 p-4" aria-label="Post">
           <div className="relative overflow-hidden rounded-xl">
-            <AuthImage src={c.post.image_url} alt="Post under review" className="w-full object-contain" blurred={!revealed} />
+            <AuthImage src={c.post.image_url} alt="Post under review" className="w-full object-contain" placeholderClassName="aspect-square" blurred={!revealed} />
+            {tone !== 'pending' && revealed && (
+              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs text-white">
+                <MdLock aria-hidden /> {tone === 'live' ? 'Live in the feed' : 'Hidden from users. Only reviewers can see this.'}
+              </span>
+            )}
             {!revealed && (
               <button className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 font-medium text-white" onClick={() => setRevealed(true)}>
                 <MdVisibility size={22} aria-hidden /> Reveal image
@@ -87,7 +124,7 @@ export default function AdminCasePage() {
             <div><dt className="text-xs text-muted">Protected user</dt><dd>@{c.owner.handle}</dd></div>
             <div><dt className="text-xs text-muted">Face match</dt><dd className="font-semibold tabular-nums">{c.similarity != null ? `${Math.round(c.similarity * 100)}% similarity` : '-'}</dd></div>
             <div><dt className="text-xs text-muted">Faces in image</dt><dd>{c.post.faces_detected}</dd></div>
-            <div><dt className="text-xs text-muted">Post status</dt><dd>{c.post.status}</dd></div>
+            <div><dt className="text-xs text-muted">Visible to users</dt><dd>{c.post.status === 'published' ? 'Yes, live' : 'No'}</dd></div>
           </dl>
         </section>
 
@@ -135,24 +172,36 @@ export default function AdminCasePage() {
 
           <section className="card p-4" aria-label="Actions">
             <h2 className="font-semibold">Actions</h2>
-            {c.owner_response && <p className="mt-1 text-sm">Owner responded <b>{c.owner_response.value === 'not_me' ? 'Not me' : 'It\'s me'}</b> {timeAgo(c.owner_response.at)}.</p>}
-            {c.admin_action && <p className="mt-1 text-sm">Admin action <b>{c.admin_action.value}</b> {timeAgo(c.admin_action.at)}{c.admin_action.note && `: "${c.admin_action.note}"`}</p>}
-            <label className="label mt-3" htmlFor="note">Note (saved to the audit log)</label>
-            <input id="note" className="input" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+            {c.allowed_actions.length > 0 ? (
+              <>
+                <label className="label mt-3" htmlFor="note">Note (saved to the audit log)</label>
+                <input id="note" className="input" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+              </>
+            ) : (
+              <p className="mt-2 flex items-center gap-2 rounded-xl bg-surface px-3 py-2.5 text-sm text-muted">
+                <MdLock className="shrink-0" aria-hidden />
+                {c.post.status === 'deleted' ? 'No actions: the poster deleted this post.' : 'No actions: this post is already taken down.'}
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="btn-danger" onClick={() => setAsk('takedown')} disabled={busy}><MdDelete aria-hidden /> Take down</button>
-              <button className="btn-ghost" onClick={() => setAsk('release')} disabled={busy}><MdCheck aria-hidden /> Release</button>
+              {can('takedown') && <button className="btn-danger" onClick={() => setAsk('takedown')} disabled={busy}><MdDelete aria-hidden /> Take down</button>}
+              {can('release') && <button className="btn-ghost" onClick={() => setAsk('release')} disabled={busy}><MdCheck aria-hidden /> Release</button>}
               <button className="btn-ghost" onClick={() => evidence(false)} disabled={reportBusy}><MdDescription aria-hidden /> {reportBusy ? 'Preparing...' : c.has_evidence ? 'View evidence pack' : 'Generate evidence pack'}</button>
             </div>
           </section>
 
           <section className="card p-4" aria-label="Timeline">
             <h2 className="font-semibold">Timeline</h2>
-            <ol className="mt-2 space-y-2 border-l-2 border-gray-200 pl-4 text-sm">
-              <li><span className="font-medium">Post uploaded and scanned</span> <span className="text-muted">{c.post.created_at && new Date(c.post.created_at).toLocaleString()}</span></li>
-              {c.timeline.map((t, i) => (
-                <li key={i}><span className="font-medium">{ACTION_LABEL[t.action] ?? t.action}</span> <span className="text-muted">{t.at && new Date(t.at).toLocaleString()}</span>
-                  {typeof t.details?.note === 'string' && t.details.note && <span className="text-muted">: "{t.details.note}"</span>}</li>
+            <ol className="mt-3 space-y-3 text-sm">
+              {[{ action: 'uploaded', at: c.post.created_at, details: {} as Record<string, unknown> }, ...c.timeline].map((t, i) => (
+                <li key={i} className="relative flex gap-3 pl-1">
+                  <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-white ${DOT[t.action] ?? 'bg-primary'}`} aria-hidden />
+                  <div>
+                    <p className="font-medium">{t.action === 'uploaded' ? 'Post uploaded and scanned' : ACTION_LABEL[t.action] ?? t.action}</p>
+                    <p className="text-xs text-muted">{t.at && new Date(t.at).toLocaleString()}
+                      {typeof t.details?.note === 'string' && t.details.note && <>: "{t.details.note}"</>}</p>
+                  </div>
+                </li>
               ))}
             </ol>
           </section>

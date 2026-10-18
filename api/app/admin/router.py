@@ -19,6 +19,15 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 STATUSES = {"awaiting_owner", "owner_not_me", "owner_its_me", "removed", "released"}
 
 
+def allowed_actions(post_status: str | None) -> list[str]:
+    """What an admin can still do to a post.
+
+    Take down a post that is held or live. Release only a held post: a post removed after the owner
+    said "Not me" stays down (it is their veto), and a deleted post is gone.
+    """
+    return {"held": ["takedown", "release"], "published": ["takedown"]}.get(post_status or "", [])
+
+
 def _iso(ts):
     return ts.isoformat() if ts else None
 
@@ -73,6 +82,8 @@ def case_detail(case_id: str, _: User = Depends(require_admin)):
         "owner_response": c.get("owner_response") and {**c["owner_response"], "at": _iso(c["owner_response"].get("at"))},
         "admin_action": c.get("admin_action") and {**c["admin_action"], "at": _iso(c["admin_action"].get("at"))},
         "has_evidence": bool(c.get("evidence_report_md")),
+        "allowed_actions": allowed_actions(post.get("status")),
+        "admin_handle": _handle(c["admin_action"]["by"], {}) if c.get("admin_action") else None,
         "owner": {"handle": owner.get("handle"), "display_name": owner.get("display_name")},
         "post": {
             "post_id": c["post_id"], "status": post.get("status"), "caption": post.get("caption", ""),
@@ -95,6 +106,10 @@ def action(case_id: str, body: AdminActionIn, admin: User = Depends(require_admi
     if not snap.exists:
         raise HTTPException(404, "Case not found")
     c = snap.to_dict()
+    post_status = (db.collection("posts").document(c["post_id"]).get().to_dict() or {}).get("status")
+    if body.action not in allowed_actions(post_status):
+        raise HTTPException(409, {"published": "This post is already live.", "removed": "This post was already taken down.",
+                                  "deleted": "The poster already deleted this post."}.get(post_status or "", "This action is no longer available."))
     if body.action == "takedown":
         remove_post(c["post_id"])
         status = "removed"

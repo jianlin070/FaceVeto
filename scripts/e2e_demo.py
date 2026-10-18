@@ -84,6 +84,7 @@ def main():
     check("owner can view held image", owner.get(f"/api/media/{held_id}").status_code == 200)
     feed_ids = {p["post_id"] for p in poster.get("/api/feed").json()}
     check("held post is not in the feed", held_id not in feed_ids)
+    not_me_case = case and case["case_id"]
     if case:
         r = owner.post(f"/api/cases/{case['case_id']}/respond", json={"response": "not_me"})
         check("Not me removes the post", r.status_code == 200 and r.json()["status"] == "owner_not_me")
@@ -150,6 +151,15 @@ def main():
         trace = (detail.get("post") or {}).get("scan", {}).get("agent_trace") or []
         tools = [t["tool"] for t in trace if t.get("step") == "call"]
         check("admin case shows Gemini assessment", bool(assessment.get("reasoning")), f"agent tools: {tools or 'agent off'}")
+        check("admin can take down and release a held post", detail.get("allowed_actions") == ["takedown", "release"])
+        if not_me_case:
+            d2 = admin.get(f"/api/admin/cases/{not_me_case}").json()
+            r2 = admin.post(f"/api/admin/cases/{not_me_case}/action", json={"action": "release"})
+            check("admin cannot override the owner's Not me", d2.get("allowed_actions") == [] and r2.status_code == 409, r2.text[:100])
+        if mine:
+            first = admin.post(f"/api/admin/cases/{mine['case_id']}/action", json={"action": "takedown", "note": "e2e"})
+            again = admin.post(f"/api/admin/cases/{mine['case_id']}/action", json={"action": "takedown"})
+            check("second takedown is refused", first.status_code == 200 and again.status_code == 409, again.text[:100])
     except Exception as e:  # demo login unavailable (DEMO_MODE off or local signer missing)
         check("admin checks", False, f"skipped: {type(e).__name__}")
 
