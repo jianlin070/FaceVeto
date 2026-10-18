@@ -10,7 +10,7 @@ Built for the Google Cloud AI Builder Cup 2026 (theme: Media, Content & Digital 
 
 The prototype simulates a social app called **Lepak** with FaceVeto built in.
 
-1. Open https://faceveto.web.app/demo and click the three buttons to open **Alice** (protected user), **Bob** (a 3 day old account) and **Admin** (trust & safety console) side by side. Each browser tab keeps its own login.
+1. Open https://faceveto.web.app/demo and click the two buttons to open **Bob** (a 3 day old account) and **Admin** (trust & safety console) next to your own tab. Each browser tab keeps its own login.
 2. **Use your own face:** in a new tab, create an account and complete the live face check. Then, as Bob, pick a selfie of yourself, choose **Test: betting ad** in the banner menu and post it.
 3. Bob only sees "Under review". Your Alerts tab shows the held post within seconds. Tap **Not me** or **It's me**.
 4. In the Admin window, the overview shows held posts and takedowns over time. Open the review queue and the case: match score, Gemini's category, quoted evidence, reasoning, timeline, and a generated evidence pack.

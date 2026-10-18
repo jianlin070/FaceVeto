@@ -4,8 +4,8 @@ import { MdOpenInNew } from 'react-icons/md'
 import { demoLogin } from '../lib/auth'
 import Spinner from '../components/Spinner'
 
+// Alice stays reachable at /demo/go/alice but is not offered here: her face is not enrolled, so she never gets alerts.
 const WINDOWS = [
-  { who: 'alice', label: 'Alice: protected user', size: 'width=430,height=880' },
   { who: 'bob', label: 'Bob: 3 day old account', size: 'width=430,height=880' },
   { who: 'admin', label: 'Admin: review console', size: 'width=1200,height=880' },
 ] as const
@@ -20,8 +20,8 @@ export default function Demo() {
     <div className="mx-auto max-w-3xl p-5">
       <Link to="/" className="flex items-center gap-2.5 text-lg font-bold tracking-tight"><img src="/favicon.svg" alt="" className="h-8 w-8" /><span>Face<span className="text-primary">Veto</span></span></Link>
       <h1 className="mt-6 text-2xl font-bold">Demo guide</h1>
-      <p className="mt-1 text-muted">Open the three windows and arrange them side by side. Every window has its own login.</p>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <p className="mt-1 text-muted">Open the two windows and arrange them next to your own tab. Every window has its own login.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         {WINDOWS.map((w) => (
           <button key={w.who} className="btn-primary" onClick={() => open(w.who, w.size)}>
             <MdOpenInNew aria-hidden /> {w.label}
@@ -30,7 +30,7 @@ export default function Demo() {
       </div>
 
       <section className="card mt-6 p-5">
-        <h2 className="font-semibold">Flow 1: use your own face (about 2 minutes)</h2>
+        <h2 className="font-semibold">Try it with your own face (about 2 minutes)</h2>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
           <li>In a new tab, <Link to="/signup" className="text-primary underline">create an account</Link> and complete the live face check (blink twice, turn left and right in the order shown).</li>
           <li>Open the <b>Bob</b> window. Choose a selfie of yourself, pick <b>Test: betting ad</b> from the banner menu, and post it. Bob only sees "Under review".</li>
@@ -40,16 +40,6 @@ export default function Demo() {
         </ol>
       </section>
 
-      <section className="card mt-4 p-5">
-        <h2 className="font-semibold">Flow 2: the Alice story</h2>
-        <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm">
-          <li>Alice is a protected user. Bob uploads a photo of Alice with a "free kredit RM50" betting banner.</li>
-          <li>Bob sees "Under review". Alice gets an alert in her language within seconds.</li>
-          <li>The admin console shows the match score, category, and Gemini evidence quoting the banner text.</li>
-          <li>Alice taps "Not me": the post is removed and an evidence pack is generated.</li>
-          <li>Alice posts her own selfie: it goes live (ownership check).</li>
-        </ol>
-      </section>
       <p className="mt-4 text-xs text-muted">Banners are added in your browser and labelled as tests. The prototype never uses real sexual content.</p>
     </div>
   )
