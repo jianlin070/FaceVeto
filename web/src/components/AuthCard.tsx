@@ -5,7 +5,7 @@ export default function AuthCard({ title, children }: { title: string; children:
   return (
     <div className="flex min-h-screen items-start justify-center px-4 py-10 sm:items-center">
       <div className="card w-full max-w-sm p-6">
-        <Link to="/" className="flex items-center gap-2 font-semibold"><img src="/favicon.svg" alt="" className="h-7 w-7" /> FaceVeto</Link>
+        <Link to="/" className="flex items-center gap-2.5 text-lg font-bold tracking-tight"><img src="/favicon.svg" alt="" className="h-8 w-8" /><span>Face<span className="text-primary">Veto</span></span></Link>
         <h1 className="mt-5 text-2xl font-bold">{title}</h1>
         {children}
       </div>

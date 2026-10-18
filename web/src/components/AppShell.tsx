@@ -35,9 +35,7 @@ export default function AppShell() {
       <header className="sticky top-0 z-20 border-b border-line bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="flex h-15 items-center gap-2.5 px-4">
           <NavLink to="/feed" className="flex items-center gap-2.5" aria-label="Lepak home">
-            <span className="flex h-8.5 w-8.5 items-center justify-center rounded-[11px] bg-primary/10" aria-hidden>
-              <img src="/favicon.svg" alt="" className="h-5.5 w-5.5" />
-            </span>
+            <img src="/favicon.svg" alt="" className="h-8.5 w-8.5" />
             <span className="text-xl font-bold tracking-tight">Lepak</span>
           </NavLink>
           <span className="ml-auto rounded-full bg-surface px-2.5 py-1 text-[11px] font-medium text-muted">protected by FaceVeto</span>
