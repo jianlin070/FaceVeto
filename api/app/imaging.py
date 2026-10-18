@@ -6,7 +6,8 @@ import numpy as np
 from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
+# MPO is a JPEG with extra frames (iPhone HDR and portrait photos). Only the first frame is used.
+ALLOWED_FORMATS = {"JPEG", "MPO", "PNG", "WEBP"}
 Image.MAX_IMAGE_PIXELS = 40_000_000  # refuse decompression bombs
 
 
@@ -33,3 +34,10 @@ def clean_image(data: bytes, max_bytes: int, max_side: int = 1600, quality: int 
     img.save(buf, format="JPEG", quality=quality)  # no exif= argument, so metadata is dropped
     rgb = np.asarray(img)
     return CleanImage(jpeg=buf.getvalue(), bgr=rgb[:, :, ::-1].copy(), width=img.width, height=img.height)
+
+
+def from_stored(jpeg: bytes) -> CleanImage:
+    """Decode an image this service already cleaned and stored, without re-encoding it."""
+    img = Image.open(io.BytesIO(jpeg)).convert("RGB")
+    rgb = np.asarray(img)
+    return CleanImage(jpeg=jpeg, bgr=rgb[:, :, ::-1].copy(), width=img.width, height=img.height)

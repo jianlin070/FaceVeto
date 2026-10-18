@@ -1,50 +1,100 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { MdHome, MdLogout, MdNotifications, MdShield, MdAdminPanelSettings } from 'react-icons/md'
+import { useCallback, useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import {
+  MdAdminPanelSettings, MdHome, MdLogout, MdNotifications, MdOutlineHome, MdOutlineNotifications, MdOutlineShield,
+  MdShield, MdVolumeUp,
+} from 'react-icons/md'
 import { useAuth } from '../lib/auth'
-import { useUnreadCount } from '../lib/notifications'
+import { notificationHref, useLiveNotifications } from '../lib/notifications'
+import { playChime, setSoundEnabled, soundEnabled, unlockAudioOnFirstGesture } from '../lib/sound'
+import type { Notification } from '../lib/types'
+import Avatar from './Avatar'
+import HeadsUp from './HeadsUp'
+import Menu, { MenuItem } from './Menu'
 
 /** The "Lepak" social app: phone-width, friendly, bottom navigation. */
 export default function AppShell() {
   const { me, signOut } = useAuth()
   const nav = useNavigate()
-  const unread = useUnreadCount()
-  const item = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${isActive ? 'text-primary font-semibold' : 'text-muted'}`
+  const { pathname } = useLocation()
+  const [headsUp, setHeadsUp] = useState<Notification | null>(null)
+  const [sound, setSound] = useState(soundEnabled)
+
+  useEffect(unlockAudioOnFirstGesture, [])
+  const unread = useLiveNotifications((n) => {
+    playChime()
+    if (pathname !== '/alerts') setHeadsUp(n) // the Alerts page already shows it
+  })
+  const dismiss = useCallback(() => setHeadsUp(null), [])
+
+  useEffect(() => {
+    document.title = unread > 0 ? `(${unread}) Lepak` : 'Lepak'
+    return () => { document.title = 'FaceVeto' }
+  }, [unread])
+
+  const tab = ({ isActive }: { isActive: boolean }) =>
+    `flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5 text-xs ${isActive ? 'font-semibold text-ink' : 'text-muted'}`
+  const pill = (active: boolean) => `relative flex h-8 w-16 items-center justify-center rounded-full transition ${active ? 'bg-primary/12 text-primary' : ''}`
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-[420px] flex-col bg-white shadow-sm">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur">
-        <div>
-          <span className="text-xl font-bold text-primary">Lepak</span>
-          <span className="ml-2 rounded-full bg-surface px-2 py-0.5 text-[11px] text-muted">protected by FaceVeto</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {me?.is_admin && (
-            <NavLink to="/admin" className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Admin console" title="Admin console">
-              <MdAdminPanelSettings size={22} />
-            </NavLink>
-          )}
-          <button
-            className="rounded-lg p-2 text-muted hover:bg-surface"
-            aria-label="Sign out" title={`Sign out @${me?.handle ?? ''}`}
-            onClick={async () => { await signOut(); nav('/') }}
-          >
-            <MdLogout size={20} />
-          </button>
+    <div className="mx-auto flex min-h-dvh max-w-[420px] flex-col bg-white shadow-sm">
+      {headsUp && <HeadsUp note={headsUp} onDismiss={dismiss} onOpen={() => { nav(notificationHref(headsUp)); dismiss() }} />}
+      <header className="sticky top-0 z-20 border-b border-line bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur">
+        <div className="flex h-14 items-center justify-between pl-4 pr-2">
+          <NavLink to="/feed" className="flex items-center gap-2" aria-label="Lepak home">
+            <img src="/favicon.svg" alt="" className="h-7 w-7" />
+            <span className="text-xl font-bold tracking-tight">Lepak</span>
+            <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-muted">protected by FaceVeto</span>
+          </NavLink>
+          <Menu label="Account menu" className="rounded-full p-1 transition hover:bg-surface"
+            trigger={<Avatar name={me?.display_name ?? ''} handle={me?.handle ?? ''} size={34} />}>
+            {(close) => (
+              <>
+                <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+                  <Avatar name={me?.display_name ?? ''} handle={me?.handle ?? ''} size={36} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{me?.display_name}</p>
+                    <p className="truncate text-xs text-muted">@{me?.handle}</p>
+                  </div>
+                </div>
+                <MenuItem icon={<MdVolumeUp />} checked={sound}
+                  onSelect={() => { setSoundEnabled(!sound); setSound(!sound); if (!sound) playChime() }}>
+                  Notification sound
+                </MenuItem>
+                <MenuItem icon={<MdShield />} onSelect={() => { close(); nav('/settings/protection') }}>Face protection</MenuItem>
+                {me?.is_admin && (
+                  <MenuItem icon={<MdAdminPanelSettings />} onSelect={() => { close(); nav('/admin') }}>Admin console</MenuItem>
+                )}
+                <MenuItem icon={<MdLogout />} onSelect={async () => { close(); await signOut(); nav('/') }}>Sign out</MenuItem>
+              </>
+            )}
+          </Menu>
         </div>
       </header>
-      <main className="flex-1 pb-20"><Outlet /></main>
-      <nav className="fixed bottom-0 left-1/2 z-10 flex w-full max-w-[420px] -translate-x-1/2 border-t border-gray-200 bg-white" aria-label="Main">
-        <NavLink to="/feed" className={item}><MdHome size={24} aria-hidden />Feed</NavLink>
-        <NavLink to="/alerts" className={item}>
-          <span className="relative">
-            <MdNotifications size={24} aria-hidden />
-            {unread > 0 && (
-              <span className="absolute -right-2 -top-1 rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">{unread}</span>
-            )}
-          </span>
-          Alerts{unread > 0 && <span className="sr-only">, {unread} unread</span>}
+      <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]"><Outlet /></main>
+      <nav aria-label="Main"
+        className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[420px] -translate-x-1/2 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <NavLink to="/feed" className={tab}>
+          {({ isActive }) => <><span className={pill(isActive)}>{isActive ? <MdHome size={24} /> : <MdOutlineHome size={24} />}</span>Feed</>}
         </NavLink>
-        <NavLink to="/settings/protection" className={item}><MdShield size={24} aria-hidden />Protection</NavLink>
+        <NavLink to="/alerts" className={tab}>
+          {({ isActive }) => (
+            <>
+              <span className={pill(isActive)}>
+                {isActive ? <MdNotifications size={24} /> : <MdOutlineNotifications size={24} />}
+                {unread > 0 && (
+                  <span className="absolute right-2 top-0 min-w-4.5 rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-4.5 text-white ring-2 ring-white">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </span>
+              Alerts{unread > 0 && <span className="sr-only">, {unread} unread</span>}
+            </>
+          )}
+        </NavLink>
+        <NavLink to="/settings/protection" className={tab}>
+          {({ isActive }) => <><span className={pill(isActive)}>{isActive ? <MdShield size={24} /> : <MdOutlineShield size={24} />}</span>Protection</>}
+        </NavLink>
       </nav>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { collection, onSnapshot, query, where } from 'firebase/firestore'
 import { MdInfoOutline, MdNotificationsNone } from 'react-icons/md'
 import { db } from '../lib/firebase'
@@ -7,6 +8,7 @@ import { useAuth } from '../lib/auth'
 import { toast } from '../lib/toast'
 import { timeAgo } from '../lib/format'
 import type { Notification, OwnerCase } from '../lib/types'
+import AuthImage from '../components/AuthImage'
 import CaseCard from '../components/CaseCard'
 import Spinner from '../components/Spinner'
 
@@ -14,6 +16,8 @@ export default function Alerts() {
   const { fbUser } = useAuth()
   const [data, setData] = useState<{ cases: OwnerCase[]; notifications: Notification[] } | null>(null)
   const loading = useRef(false)
+  const { hash } = useLocation()
+  const [focus, setFocus] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (loading.current) return
@@ -33,6 +37,19 @@ export default function Alerts() {
     load()
     return () => { unsub(); if (poll) clearInterval(poll) }
   }, [fbUser, load])
+
+  // Opened from a notification: scroll to its entry and highlight it briefly.
+  const ready = data !== null
+  useEffect(() => {
+    const id = decodeURIComponent(hash.slice(1))
+    const el = ready && id ? document.getElementById(id) : null
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setFocus(id)
+    const t = setTimeout(() => setFocus(null), 2500)
+    return () => clearTimeout(t)
+  }, [hash, ready])
+  const ring = (id: string) => (focus === id ? 'rounded-2xl ring-2 ring-primary ring-offset-2 transition' : 'transition')
 
   async function respond(id: string, r: 'not_me' | 'its_me') {
     await api(`/api/cases/${id}/respond`, { method: 'POST', body: JSON.stringify({ response: r }) })
@@ -54,23 +71,26 @@ export default function Alerts() {
           <p className="mt-2 text-sm">No alerts. If someone posts your face, you will see it here first.</p>
         </div>
       )}
-      {open.map((c) => <CaseCard key={c.case_id} c={c} onRespond={respond} />)}
+      {open.map((c) => <div key={c.case_id} id={`case-${c.case_id}`} className={ring(`case-${c.case_id}`)}><CaseCard c={c} onRespond={respond} /></div>)}
       {fyis.length > 0 && (
         <section aria-label="Updates" className="card divide-y divide-gray-100">
           {fyis.map((n) => (
-            <div key={n.id} className="flex gap-3 p-3">
+            <div key={n.id} id={`note-${n.id}`} className={`flex gap-3 p-3 ${ring(`note-${n.id}`)}`}>
               <MdInfoOutline size={20} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{n.title}</p>
                 <p className="text-sm text-muted">{n.body}</p>
                 <p className="mt-0.5 text-xs text-muted">{timeAgo(n.created_at)}</p>
               </div>
+              {n.type === 'fyi_appearance' && n.post_id && (
+                <AuthImage src={`/api/media/${n.post_id}`} alt="The post you appear in" className="h-14 w-14 shrink-0 rounded-lg object-cover text-[0px]" />
+              )}
             </div>
           ))}
         </section>
       )}
       {closed.length > 0 && <h2 className="px-1 pt-2 text-sm font-semibold text-muted">Resolved</h2>}
-      {closed.map((c) => <CaseCard key={c.case_id} c={c} onRespond={respond} />)}
+      {closed.map((c) => <div key={c.case_id} id={`case-${c.case_id}`} className={ring(`case-${c.case_id}`)}><CaseCard c={c} onRespond={respond} /></div>)}
     </div>
   )
 }

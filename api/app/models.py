@@ -68,7 +68,13 @@ class PostOut(BaseModel):
     caption: str
     status: str  # published | under_review | removed (poster view never shows match details)
     created_at: str | None = None
-    image_url: str
+    image_url: str | None = None  # None for text-only posts
+    is_mine: bool = False
+    edited: bool = False
+
+
+class PostEditIn(BaseModel):
+    caption: str = Field(max_length=2000)
 
 
 class RespondIn(BaseModel):

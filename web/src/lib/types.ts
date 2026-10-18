@@ -20,7 +20,9 @@ export interface Post {
   caption: string
   status: 'published' | 'under_review' | 'removed' | 'processing'
   created_at: string | null
-  image_url: string
+  image_url: string | null
+  is_mine: boolean
+  edited: boolean
 }
 
 export type CaseStatus = 'awaiting_owner' | 'owner_not_me' | 'owner_its_me' | 'removed' | 'released'

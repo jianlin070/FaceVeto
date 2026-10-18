@@ -26,6 +26,8 @@ A post is held only when all three are true:
 
 If a protected face appears in a harmless post, it goes live and the person gets an FYI. Posts with no protected faces never reach Gemini.
 
+Editing a caption runs the same check again, because new wording can turn a harmless photo into a scam or betting ad. Earlier "It's me" approvals do not carry over to the new text. Text-only posts have no face to protect and publish straight away. Posts under review cannot be edited or deleted until a decision is made.
+
 ```
 Browser (React, MediaPipe liveness)  ──/api/**──▶  Firebase Hosting rewrite  ──▶  Cloud Run: faceveto-api (FastAPI)
                                                                                     │

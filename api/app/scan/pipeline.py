@@ -78,12 +78,19 @@ def scan(img: CleanImage, caption: str, author_uid: str, author_age_days: int, a
                        res.latency_ms, res.error, res.tokens, timings, trace)
 
 
-def apply_decision(post_id: str, img: CleanImage, author: dict, out: ScanOutcome, started_ms: float) -> str:
-    """Persist the outcome. Returns the poster-facing status: published | under_review."""
+def apply_decision(post_id: str, img: CleanImage | None, author: dict, out: ScanOutcome, started_ms: float,
+                   *, notify_fyi: bool = True) -> str:
+    """Persist the outcome. Returns the poster-facing status: published | under_review.
+
+    img is None for text-only posts. notify_fyi=False on caption edits: the owner already had an FYI
+    for this photo, and only a hold needs their attention again.
+    """
     db = get_db()
     held = out.decision.action == "hold"
-    path = f"{'quarantine' if held else 'posts'}/{post_id}.jpg"
-    get_bucket().blob(path).upload_from_string(img.jpeg, content_type="image/jpeg")
+    path = None
+    if img is not None:
+        path = f"{'quarantine' if held else 'posts'}/{post_id}.jpg"
+        get_bucket().blob(path).upload_from_string(img.jpeg, content_type="image/jpeg")
     latency_ms = int(time.perf_counter() * 1000 - started_ms)
 
     db.collection("posts").document(post_id).update({
@@ -120,7 +127,7 @@ def apply_decision(post_id: str, img: CleanImage, author: dict, out: ScanOutcome
             alert, by_ai = gemini.write_owner_alert("held_post", lang, a)
             notify(owner_uid, "held_post", alert.title, alert.body, case_id=case_ref.id, post_id=post_id, ai=by_ai)
             audit("system", "post_held", f"posts/{post_id}", {"case_id": case_ref.id, "reason": out.decision.reason})
-        elif out.decision.action == "publish_and_notify":
+        elif out.decision.action == "publish_and_notify" and notify_fyi:
             alert, by_ai = gemini.write_owner_alert("fyi_appearance", lang, out.assessment)
             notify(owner_uid, "fyi_appearance", alert.title, alert.body, post_id=post_id, ai=by_ai)
 

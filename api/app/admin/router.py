@@ -151,7 +151,8 @@ def stats(_: User = Depends(require_admin)):
     posts = [p for p in posts if not p.get("is_test")]
     counts = {s: sum(1 for p in posts if p.get("status") == s) for s in ("published", "held", "removed")}
     released = sum(1 for p in posts if p.get("released_at"))
-    scans = [p["scan"] for p in posts if (p.get("scan") or {}).get("latency_ms") is not None]
+    # Text-only posts skip the face scan, so they would flatter the latency numbers.
+    scans = [p["scan"] for p in posts if p.get("has_image", True) and (p.get("scan") or {}).get("latency_ms") is not None]
     lat = [s["latency_ms"] for s in scans]
     gem = [s["gemini_latency_ms"] for s in scans if s.get("gemini_latency_ms")]
     held_ever = sum(1 for p in posts if (p.get("decision") or {}).get("action") == "hold")

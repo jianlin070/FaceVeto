@@ -9,17 +9,39 @@
   --color-ink: #202124;
   --color-muted: #5F6368;
   --color-surface: #F1F3F4;
+  --color-line: #E3E5E8;
   --font-sans: "Google Sans", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --animate-drop-in: drop-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 0.15s ease-out;
+
+  @keyframes drop-in {
+    from { transform: translateY(-120%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
 }
 
 html, body, #root { min-height: 100%; }
-body { @apply bg-surface text-ink font-sans antialiased; }
+body {
+  @apply bg-surface text-ink font-sans antialiased;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  -webkit-tap-highlight-color: transparent;
+}
 :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
 
-@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed; }
-@utility btn-primary { @apply btn bg-primary text-white hover:bg-primary-dark; }
-@utility btn-danger { @apply btn bg-danger text-white hover:brightness-95; }
+@utility btn { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-5 py-2.5 font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100; }
+@utility btn-primary { @apply btn bg-primary text-white shadow-sm hover:bg-primary-dark; }
+@utility btn-danger { @apply btn bg-danger text-white shadow-sm hover:brightness-95; }
 @utility btn-ghost { @apply btn bg-white text-ink border border-gray-300 hover:bg-gray-50; }
-@utility card { @apply bg-white rounded-xl shadow-sm border border-gray-200; }
-@utility input { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:border-primary focus:outline-none; }
+@utility icon-btn { @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-surface hover:text-ink active:scale-95 disabled:opacity-40; }
+@utility card { @apply bg-white rounded-2xl shadow-sm border border-line; }
+@utility input { @apply w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20; }
 @utility label { @apply block text-sm font-medium text-muted mb-1; }
+@utility skeleton { @apply animate-pulse rounded bg-surface; }

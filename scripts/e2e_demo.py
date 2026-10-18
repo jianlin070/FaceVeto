@@ -108,6 +108,28 @@ def main():
     notes = owner.get("/api/alerts").json()["notifications"]
     check("owner gets an FYI notification", any(n["type"] == "fyi_appearance" and n["post_id"] == r.json().get("post_id") for n in notes))
 
+    fyi_id = r.json().get("post_id")
+    r = poster.patch(f"/api/posts/{fyi_id}", json={"caption": "Happy birthday! See you at dinner tonight"})
+    check("harmless caption edit stays live", r.status_code == 200 and r.json()["status"] == "published", r.text[:120])
+    r = poster.patch(f"/api/posts/{fyi_id}", json={"caption": "DAFTAR SEKARANG! Free kredit RM50, menang RM5k sehari. PM for agent link wa.me/60123456789"})
+    check("editing the caption into a betting promo sends it back to review", r.status_code == 200 and r.json()["status"] == "under_review", r.text[:120])
+    check("poster cannot delete a post under review", poster.delete(f"/api/posts/{fyi_id}").status_code == 409)
+
+    r = poster.post("/api/posts", data={"caption": "Text only post from the e2e check"})
+    text_id = r.json().get("post_id")
+    if r.status_code == 200:
+        created_posts.append(text_id)
+    feed = {p["post_id"]: p for p in poster.get("/api/feed").json()}
+    check("text-only post publishes with no image", r.json().get("status") == "published" and feed.get(text_id, {}).get("image_url") is None, r.text[:120])
+    r = poster.patch(f"/api/posts/{text_id}", json={"caption": "Edited text only post"})
+    mine = {p["post_id"]: p for p in poster.get("/api/posts/mine").json()}
+    check("text post edit is saved", r.status_code == 200 and mine.get(text_id, {}).get("edited") is True)
+    check("others cannot edit or delete my post", owner.patch(f"/api/posts/{text_id}", json={"caption": "x"}).status_code == 404
+          and owner.delete(f"/api/posts/{text_id}").status_code == 404)
+    r = poster.delete(f"/api/posts/{text_id}")
+    feed_ids = {p["post_id"] for p in poster.get("/api/feed").json()}
+    check("delete removes the post", r.status_code == 200 and text_id not in feed_ids and poster.delete(f"/api/posts/{text_id}").status_code == 404)
+
     img, cap = mk.plain(a_photos[1])
     r, _ = post(owner, img, cap)
     check("owner's own selfie publishes (ownership check)", r.json().get("status") == "published")
