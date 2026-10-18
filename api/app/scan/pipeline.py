@@ -134,6 +134,8 @@ def apply_decision(post_id: str, img: CleanImage | None, author: dict, out: Scan
     log.info("post scanned", extra={"fields": {
         "post_id": post_id, "decision": out.decision.action, "latency_ms": latency_ms,
         "faces": out.faces_detected, "gemini_called": out.gemini_called, "gemini_latency_ms": out.gemini_latency_ms,
+        "category": out.assessment.category if out.assessment else None,
+        "severity": out.assessment.severity if out.assessment else None,
     }})
     return "under_review" if held else "published"
 
