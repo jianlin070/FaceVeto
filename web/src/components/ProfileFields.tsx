@@ -1,4 +1,5 @@
 import type { Language } from '../lib/types'
+import Select from './Select'
 
 export interface ProfileValues { display_name: string; handle: string; preferred_language: Language }
 
@@ -22,19 +23,17 @@ export default function ProfileFields({ v, set }: { v: ProfileValues; set: (v: P
       </div>
       <div>
         <label className="label" htmlFor="handle">Handle</label>
-        <div className="flex items-center rounded-lg border border-gray-300 bg-white focus-within:border-primary">
+        <div className="flex items-center rounded-xl border border-gray-300 bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
           <span className="pl-3 text-muted">@</span>
-          <input id="handle" className="w-full rounded-lg px-1 py-2 focus:outline-none" required pattern="[a-z0-9_]{3,20}"
+          <input id="handle" className="w-full rounded-xl px-1 py-2.5 focus:outline-none" required pattern="[a-z0-9_]{3,20}"
             title="3 to 20 lowercase letters, numbers or underscores" value={v.handle}
             onChange={(e) => set({ ...v, handle: e.target.value.toLowerCase() })} />
         </div>
       </div>
       <div>
-        <label className="label" htmlFor="lang">Preferred language for alerts</label>
-        <select id="lang" className="input" value={v.preferred_language}
-          onChange={(e) => set({ ...v, preferred_language: e.target.value as Language })}>
-          {LANGS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-        </select>
+        <p className="label">Preferred language for alerts</p>
+        <Select label="Language" value={v.preferred_language} options={LANGS}
+          onChange={(x) => set({ ...v, preferred_language: x as Language })} />
       </div>
     </>
   )

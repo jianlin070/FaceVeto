@@ -78,6 +78,17 @@ export interface AdminCaseRow {
   owner_handle: string
   poster_handle: string
   owner_response: string | null
+  caption: string
+  post_status: string | null
+}
+
+export interface PosterCase {
+  case_id: string
+  status: CaseStatus
+  category: string
+  created_at: string | null
+  caption: string
+  post_status: string | null
 }
 
 export interface AdminCase {
@@ -109,18 +120,26 @@ export interface AdminCase {
       agent_ms?: number | null; agent_trace?: AgentStep[] | null }
   }
   timeline: { action: string; actor: string; at: string | null; details: Record<string, unknown> }[]
+  poster_cases: { total: number; cases: PosterCase[] }
 }
 
+export type Outcome = 'waiting' | 'down' | 'live' | 'deleted'
+
 export interface Stats {
-  posts_scanned: number
-  published: number
-  held: number
-  removed: number
-  released: number
-  held_total: number
-  gemini_calls: number
-  scan_latency_ms: { p50: number | null; p95: number | null; mean: number | null }
-  gemini_latency_ms: { p50: number | null; p95: number | null }
+  held: { at: string; category: string; outcome: Outcome; by: 'owner' | 'admin' | null }[]
+  prev_held: number
+  decision_minutes: { median: number | null; p90: number | null; prev_median: number | null }
+  posters: {
+    handle: string; account_age_days: number; held: number; people: number
+    reasons: Record<string, number>; worst: string; last_at: string; case_id: string
+  }[]
+  targets: { handle: string; held: number; posters: number }[]
+  system: { posts_scanned: number; scan_p50_ms: number | null; scan_p95_ms: number | null; ai_checks: number; ai_errors: number }
+}
+
+export interface Waiting {
+  count: number
+  oldest_at: string | null
 }
 
 export interface AgentStep {

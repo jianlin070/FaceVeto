@@ -6,6 +6,7 @@ import { toast } from '../lib/toast'
 import { imageFromClipboard, imageFromTransfer, isImageFile, normalizeImage } from '../lib/imageFile'
 import { BANNERS, applyBanner, type Banner } from '../lib/testBanner'
 import Avatar from './Avatar'
+import Select from './Select'
 
 const MAX = 2000
 const canReadClipboard = typeof navigator !== 'undefined' && typeof navigator.clipboard?.read === 'function'
@@ -84,7 +85,7 @@ export default function Composer({ onPosted }: { onPosted: (status: string) => v
       onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragging(true) } }}
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false) }}
       onDrop={(e) => { e.preventDefault(); setDragging(false); pick(imageFromTransfer(e.dataTransfer)) }}
-      className={`border-b border-line bg-white px-4 pb-2 pt-3 transition ${dragging ? 'bg-primary/5 ring-2 ring-inset ring-primary' : ''}`}>
+      className={`rounded-[20px] border border-line bg-white px-4 pb-3 pt-3.5 transition ${dragging ? 'bg-primary/5 ring-2 ring-inset ring-primary' : ''}`}>
       <div className="flex gap-3">
         <Avatar name={me?.display_name ?? ''} handle={me?.handle ?? ''} />
         <div className="min-w-0 flex-1">
@@ -107,35 +108,35 @@ export default function Composer({ onPosted }: { onPosted: (status: string) => v
               </button>
             </div>
           )}
+          {file && (
+            <div className="mt-2">
+              <Select label="Test banner" value={banner} options={BANNERS.map((b) => ({ value: b.value, label: b.label }))}
+                onChange={(v) => {
+                  const b = v as Banner
+                  setBanner(b)
+                  const cap = BANNERS.find((x) => x.value === b)?.caption
+                  if (cap && !caption) setCaption(cap)
+                }} />
+            </div>
+          )}
           {dragging && <p className="mt-2 text-sm font-medium text-primary">Drop the photo to add it</p>}
         </div>
       </div>
-      <div className="mt-2 flex items-center gap-1 pl-12">
-        <label className="icon-btn cursor-pointer text-primary" title="Add a photo">
-          <MdOutlineImage size={22} aria-hidden />
-          <span className="sr-only">Add a photo</span>
+      <div className="mt-2.5 flex items-center gap-1.5 border-t border-surface pt-2.5">
+        <label className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full bg-surface px-3.5 text-sm font-medium text-ink transition hover:bg-gray-200 focus-within:ring-3 focus-within:ring-primary/30" title="Add a photo">
+          <MdOutlineImage size={20} className="text-primary" aria-hidden />
+          Photo
           {/* image/* lets iPhone convert HEIC to JPEG on pick */}
           <input ref={input} type="file" accept="image/*" className="sr-only" onChange={(e) => pick(e.target.files?.[0] ?? null)} />
         </label>
         {canReadClipboard && (
-          <button type="button" className="icon-btn text-primary" onClick={pasteButton} aria-label="Paste a copied photo" title="Paste a copied photo">
+          <button type="button" className="icon-btn bg-surface text-primary hover:bg-gray-200" onClick={pasteButton} aria-label="Paste a copied photo" title="Paste a copied photo">
             <MdContentPaste size={20} />
           </button>
         )}
-        {file && (
-          <select className="ml-1 min-w-0 max-w-40 rounded-full border border-line bg-white px-3 py-1.5 text-base sm:text-sm" value={banner} aria-label="Add a test banner"
-            onChange={(e) => {
-              const b = e.target.value as Banner
-              setBanner(b)
-              const cap = BANNERS.find((x) => x.value === b)?.caption
-              if (cap && !caption) setCaption(cap)
-            }}>
-            {BANNERS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-          </select>
-        )}
         <span className="flex-1" />
         {left <= 200 && <span className={`mr-2 text-xs tabular-nums ${left <= 20 ? 'text-danger' : 'text-muted'}`} aria-live="polite">{left}</span>}
-        <button className="btn-primary px-5 py-1.5" disabled={(!file && !caption.trim()) || busy}>{busy ? 'Checking...' : 'Post'}</button>
+        <button className="btn-primary px-6 py-1.5" disabled={(!file && !caption.trim()) || busy}>{busy ? 'Checking...' : 'Post'}</button>
       </div>
     </form>
   )

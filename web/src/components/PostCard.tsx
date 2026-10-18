@@ -43,8 +43,8 @@ export default function PostCard({ post, showStatus, onChange, onDelete }: {
   }
 
   return (
-    <article className="border-b border-line bg-white" aria-label={`Post by ${name}`}>
-      <header className="flex items-center gap-3 py-3 pl-4 pr-2">
+    <article className="overflow-hidden rounded-[20px] border border-line bg-white" aria-label={`Post by ${name}`}>
+      <header className="flex items-center gap-3 py-3.5 pl-4 pr-2">
         <Avatar name={post.author_display_name} handle={post.author_handle} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold">{name}</p>
@@ -54,10 +54,10 @@ export default function PostCard({ post, showStatus, onChange, onDelete }: {
           </p>
         </div>
         {showStatus && post.status === 'under_review' && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs font-medium"><MdHourglassTop aria-hidden />Under review</span>
+          <span className="mr-2 flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-2.5 py-1 text-xs font-semibold text-amber-900"><MdHourglassTop aria-hidden />Under review</span>
         )}
         {showStatus && post.status === 'removed' && (
-          <span className="flex shrink-0 items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-medium text-danger"><MdBlock aria-hidden />Removed</span>
+          <span className="mr-2 flex shrink-0 items-center gap-1 rounded-full bg-danger/10 px-2.5 py-1 text-xs font-semibold text-danger"><MdBlock aria-hidden />Removed</span>
         )}
         {canManage && (
           <Menu label="Post options" trigger={<MdMoreHoriz size={22} />}>
@@ -74,7 +74,7 @@ export default function PostCard({ post, showStatus, onChange, onDelete }: {
       </header>
 
       {editing !== null ? (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-4">
           <label htmlFor={`edit-${post.post_id}`} className="sr-only">Edit post text</label>
           <textarea id={`edit-${post.post_id}`} className="input resize-none text-base" rows={3} maxLength={2000} autoFocus
             value={editing} onChange={(e) => setEditing(e.target.value)}
@@ -89,22 +89,24 @@ export default function PostCard({ post, showStatus, onChange, onDelete }: {
           </div>
         </div>
       ) : post.caption && (
-        <p className={`whitespace-pre-wrap break-words px-4 pb-3 ${big ? 'text-xl leading-snug' : 'text-[15px] leading-relaxed'}`}>{post.caption}</p>
+        <p className={`whitespace-pre-wrap break-words px-4 ${post.image_url ? 'pb-3' : 'pb-4'} ${big ? 'text-xl leading-snug' : 'text-[15px] leading-relaxed'}`}>{post.caption}</p>
       )}
 
       {post.image_url && (hidden ? (
-        <div className="mx-4 mb-4 flex flex-col items-center gap-2 rounded-2xl bg-surface p-6 text-center text-sm text-muted">
-          {post.status === 'under_review' ? <MdHourglassTop size={28} aria-hidden /> : <MdBlock size={28} aria-hidden />}
+        <div className="mx-4 mb-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-[13px] leading-relaxed text-muted">
+          {post.status === 'under_review' ? <MdHourglassTop size={26} className="text-warning" aria-hidden /> : <MdBlock size={26} aria-hidden />}
           {post.status === 'under_review'
             ? 'This post is being reviewed before it goes live. You will see it here once a decision is made.'
             : 'This post is not available.'}
         </div>
       ) : (
-        <AuthImage src={post.image_url} alt={post.caption ? `Photo: ${post.caption.slice(0, 80)}` : `Photo by @${post.author_handle}`}
-          className="max-h-[560px] w-full bg-surface object-cover" placeholderClassName="aspect-[4/3]" />
+        <div className="mx-4 mb-4 overflow-hidden rounded-2xl bg-surface">
+          <AuthImage src={post.image_url} alt={post.caption ? `Photo: ${post.caption.slice(0, 80)}` : `Photo by @${post.author_handle}`}
+            className="max-h-[560px] w-full object-cover" placeholderClassName="aspect-[4/3]" />
+        </div>
       ))}
       {!post.image_url && hidden && showStatus && post.status === 'under_review' && (
-        <p className="px-4 pb-3 text-sm text-muted">This post is being reviewed before it goes live.</p>
+        <p className="px-4 pb-4 text-sm text-muted">This post is being reviewed before it goes live.</p>
       )}
 
       <ConfirmDialog open={confirmDelete} title="Delete this post?" confirmLabel="Delete" danger busy={busy}

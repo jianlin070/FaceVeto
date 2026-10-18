@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MdArrowBack, MdVerifiedUser, MdShield } from 'react-icons/md'
+import { MdArrowBack, MdDeleteOutline, MdLock, MdSearchOff, MdShield, MdVerifiedUser } from 'react-icons/md'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { toast } from '../lib/toast'
@@ -24,32 +24,39 @@ export default function Protection() {
   }
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="-ml-2 flex items-center gap-1">
+    <div className="space-y-3 p-3">
+      <div className="-ml-1 flex items-center gap-1">
         <Link to="/profile" className="icon-btn" aria-label="Back to profile"><MdArrowBack size={22} /></Link>
-        <h1 className="text-lg font-semibold">Face protection</h1>
+        <h1 className="text-lg font-bold">Face protection</h1>
       </div>
-      <div className={`card flex items-center gap-4 p-4 ${active ? 'border-success' : ''}`}>
-        {active ? <MdVerifiedUser size={40} className="text-success" aria-hidden /> : <MdShield size={40} className="text-muted" aria-hidden />}
-        <div>
-          <p className="font-semibold">{active ? 'Protected' : 'Not protected'}</p>
-          <p className="text-sm text-muted">
-            {active && me?.protection.enrolled_at
-              ? `Enrolled ${new Date(me.protection.enrolled_at).toLocaleString()}`
-              : 'Enrol your face so we can hold harmful posts of you.'}
-          </p>
-        </div>
-      </div>
-      <Link to="/enrol" className="btn-primary w-full">{active ? 'Re-enrol my face' : 'Protect my face'}</Link>
-      {active && <button className="btn-ghost w-full text-danger" onClick={() => setAsk(true)}>Delete my face template</button>}
-      <div className="card p-4 text-sm text-muted">
-        <p className="font-medium text-ink">How we handle your face</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>We store a 512-number face template, encrypted at rest. Never your photos.</li>
-          <li>Templates are only used to protect you. There is no face search.</li>
-          <li>Deleting is immediate and permanent. Posts already held stay held until you decide.</li>
+      <section className="rounded-[20px] border border-line bg-white px-5 pb-6 pt-7 text-center">
+        <span className={`mx-auto flex h-18 w-18 items-center justify-center rounded-full ring-8 ${active ? 'bg-success/10 text-success ring-success/5' : 'bg-surface text-muted ring-surface/50'}`} aria-hidden>
+          {active ? <MdVerifiedUser size={36} /> : <MdShield size={36} />}
+        </span>
+        <p className={`mt-4 text-xl font-bold ${active ? 'text-success' : ''}`}>{active ? 'Protected' : 'Not protected'}</p>
+        <p className="mt-1.5 text-sm text-muted">
+          {active && me?.protection.enrolled_at
+            ? `Enrolled ${new Date(me.protection.enrolled_at).toLocaleString()}`
+            : 'Enrol your face so we can hold harmful posts of you.'}
+        </p>
+      </section>
+      <Link to="/enrol" className="btn-primary min-h-13 w-full text-base shadow-lg shadow-primary/25">{active ? 'Re-enrol my face' : 'Protect my face'}</Link>
+      {active && <button className="btn-ghost min-h-13 w-full text-base text-danger" onClick={() => setAsk(true)}>Delete my face template</button>}
+      <section className="rounded-[20px] border border-line bg-white p-5">
+        <h2 className="font-semibold">How we handle your face</h2>
+        <ul className="mt-3 space-y-3 text-sm leading-snug text-gray-700">
+          {[
+            [<MdLock key="i" />, 'We store a 512-number face template, encrypted at rest. Never your photos.'],
+            [<MdSearchOff key="i" />, 'Templates are only used to protect you. There is no face search.'],
+            [<MdDeleteOutline key="i" />, 'Deleting is immediate and permanent. Posts already held stay held until you decide.'],
+          ].map(([icon, text]) => (
+            <li key={text as string} className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/10 text-base text-primary" aria-hidden>{icon}</span>
+              <span className="pt-1.5">{text}</span>
+            </li>
+          ))}
         </ul>
-      </div>
+      </section>
       <ConfirmDialog open={ask} title="Delete your face template?" confirmLabel="Delete" danger busy={busy}
         onConfirm={del} onCancel={() => setAsk(false)}>
         New posts of you will no longer be checked. You can enrol again any time.

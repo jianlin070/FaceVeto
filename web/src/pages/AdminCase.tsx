@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { MdArrowBack, MdAutoAwesome, MdDelete, MdCheck, MdDescription, MdDownload, MdLock, MdPrint, MdSmartToy, MdVisibility } from 'react-icons/md'
 import { api, apiText } from '../lib/api'
+import { reasonOf } from '../lib/admin'
 import { categoryLabel, timeAgo } from '../lib/format'
 import { toast } from '../lib/toast'
 import type { AdminCase } from '../lib/types'
@@ -90,7 +91,7 @@ export default function AdminCasePage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/admin" className="inline-flex items-center gap-1 rounded-full py-1 pr-3 text-sm font-medium text-primary hover:bg-primary/5"><MdArrowBack aria-hidden /> Review queue</Link>
+      <Link to="/admin/queue" className="inline-flex items-center gap-1 rounded-full py-1 pr-3 text-sm font-medium text-primary hover:bg-primary/5"><MdArrowBack aria-hidden /> Review queue</Link>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">{categoryLabel(c.category)}</h1>
         <RiskBadge severity={c.severity} />
@@ -100,7 +101,7 @@ export default function AdminCasePage() {
       <div role="status" className={`rounded-2xl border-l-4 px-4 py-3 text-sm ${BANNER[tone]}`}>{summary(c, me?.uid)}</div>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <section className="card space-y-3 p-4" aria-label="Post">
+        <section className="card space-y-3 p-4 lg:self-start" aria-label="Post">
           <div className="relative overflow-hidden rounded-xl">
             <AuthImage src={c.post.image_url} alt="Post under review" className="w-full object-contain" placeholderClassName="aspect-square" blurred={!revealed} />
             {tone !== 'pending' && revealed && (
@@ -115,8 +116,8 @@ export default function AdminCasePage() {
             )}
           </div>
           <div>
-            <p className="text-xs uppercase text-muted">Caption</p>
-            <p className="whitespace-pre-wrap text-sm">{c.post.caption || '(none)'}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Caption</p>
+            <blockquote className="mt-2 whitespace-pre-wrap rounded-xl border border-line bg-gray-50 px-4 py-3 text-[17px] leading-relaxed [overflow-wrap:anywhere]">{c.post.caption || <span className="text-muted">(no caption)</span>}</blockquote>
           </div>
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <div><dt className="text-xs text-muted">Poster</dt><dd>@{c.post.poster_handle}</dd></div>
@@ -129,6 +130,26 @@ export default function AdminCasePage() {
         </section>
 
         <div className="space-y-4">
+          <section className="card p-4" aria-label="Actions">
+            <h2 className="font-semibold">Your decision</h2>
+            {c.allowed_actions.length > 0 ? (
+              <>
+                <label className="label mt-3" htmlFor="note">Note (saved to the audit log)</label>
+                <input id="note" className="input" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
+              </>
+            ) : (
+              <p className="mt-2 flex items-center gap-2 rounded-xl bg-surface px-3 py-2.5 text-sm text-muted">
+                <MdLock className="shrink-0" aria-hidden />
+                {c.post.status === 'deleted' ? 'No actions: the poster deleted this post.' : 'No actions: this post is already taken down.'}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {can('takedown') && <button className="btn-danger" onClick={() => setAsk('takedown')} disabled={busy}><MdDelete aria-hidden /> Take down</button>}
+              {can('release') && <button className="btn-ghost" onClick={() => setAsk('release')} disabled={busy}><MdCheck aria-hidden /> Release</button>}
+              <button className="btn-ghost" onClick={() => evidence(false)} disabled={reportBusy}><MdDescription aria-hidden /> {reportBusy ? 'Preparing...' : c.has_evidence ? 'View evidence pack' : 'Generate evidence pack'}</button>
+            </div>
+          </section>
+
           <section className="card p-4" aria-label="Gemini assessment">
             <h2 className="flex items-center gap-2 font-semibold"><MdAutoAwesome className="text-primary" aria-hidden /> Gemini assessment</h2>
             {a ? (
@@ -170,25 +191,26 @@ export default function AdminCasePage() {
             </section>
           )}
 
-          <section className="card p-4" aria-label="Actions">
-            <h2 className="font-semibold">Actions</h2>
-            {c.allowed_actions.length > 0 ? (
-              <>
-                <label className="label mt-3" htmlFor="note">Note (saved to the audit log)</label>
-                <input id="note" className="input" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" />
-              </>
-            ) : (
-              <p className="mt-2 flex items-center gap-2 rounded-xl bg-surface px-3 py-2.5 text-sm text-muted">
-                <MdLock className="shrink-0" aria-hidden />
-                {c.post.status === 'deleted' ? 'No actions: the poster deleted this post.' : 'No actions: this post is already taken down.'}
-              </p>
-            )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {can('takedown') && <button className="btn-danger" onClick={() => setAsk('takedown')} disabled={busy}><MdDelete aria-hidden /> Take down</button>}
-              {can('release') && <button className="btn-ghost" onClick={() => setAsk('release')} disabled={busy}><MdCheck aria-hidden /> Release</button>}
-              <button className="btn-ghost" onClick={() => evidence(false)} disabled={reportBusy}><MdDescription aria-hidden /> {reportBusy ? 'Preparing...' : c.has_evidence ? 'View evidence pack' : 'Generate evidence pack'}</button>
-            </div>
-          </section>
+          {c.poster_cases.total > 0 && (
+            <section className="card overflow-hidden pt-4" aria-label="Other held posts by this poster">
+              <div className="px-4">
+                <h2 className="font-semibold">Other held posts by @{c.post.poster_handle} <span className="font-medium text-muted">({c.poster_cases.total})</span></h2>
+                <p className="mt-1 text-[13px] text-muted">A pattern across posts can justify a faster call.</p>
+              </div>
+              <ul className="mt-3">
+                {c.poster_cases.cases.map((o) => (
+                  <li key={o.case_id}>
+                    <Link to={`/admin/cases/${o.case_id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-surface px-4 py-3 text-sm transition hover:bg-primary/5">
+                      <span aria-hidden className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: reasonOf(o.category).color }} />
+                      <span className="min-w-0 flex-1 basis-48 truncate">{o.caption ? `“${o.caption}”` : <span className="text-muted">(no caption)</span>}</span>
+                      <CaseStatusPill status={o.status} postStatus={o.post_status} />
+                      <span className="w-14 text-right text-[13px] text-muted">{timeAgo(o.created_at)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="card p-4" aria-label="Timeline">
             <h2 className="font-semibold">Timeline</h2>

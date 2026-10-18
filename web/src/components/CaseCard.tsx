@@ -4,11 +4,11 @@ import type { OwnerCase } from '../lib/types'
 import { categoryLabel, timeAgo } from '../lib/format'
 import AuthImage from './AuthImage'
 
-const RESOLVED: Record<string, { text: string; tone: string }> = {
-  owner_not_me: { text: 'You said "Not me". The post was removed and an evidence pack was prepared.', tone: 'text-danger' },
-  owner_its_me: { text: 'You said "It\'s me". The post was allowed.', tone: 'text-success' },
-  removed: { text: 'Our review team removed this post.', tone: 'text-danger' },
-  released: { text: 'Our review team allowed this post.', tone: 'text-muted' },
+const RESOLVED: Record<string, { text: string; pill: string }> = {
+  owner_not_me: { text: 'You said "Not me". The post was removed and an evidence pack was prepared.', pill: 'bg-danger/10 text-danger' },
+  owner_its_me: { text: 'You said "It\'s me". The post was allowed.', pill: 'bg-success/10 text-success' },
+  removed: { text: 'Our review team removed this post.', pill: 'bg-danger/10 text-danger' },
+  released: { text: 'Our review team allowed this post.', pill: 'bg-surface text-muted' },
 }
 
 export default function CaseCard({ c, onRespond }: { c: OwnerCase; onRespond: (id: string, r: 'not_me' | 'its_me') => Promise<void> }) {
@@ -21,44 +21,59 @@ export default function CaseCard({ c, onRespond }: { c: OwnerCase; onRespond: (i
     try { await onRespond(c.case_id, r) } finally { setBusy(null) }
   }
 
+  if (!open) {
+    const r = RESOLVED[c.status]
+    return (
+      <article className="flex gap-3 rounded-[20px] border border-line bg-white px-4 py-3.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-muted" aria-hidden><MdWarning size={18} /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{categoryLabel(c.category)} · {timeAgo(c.created_at)}</p>
+          {r && <p className={`mt-1 inline-block rounded-xl px-2.5 py-1 text-xs font-medium ${r.pill}`}>{r.text}</p>}
+        </div>
+      </article>
+    )
+  }
+
   return (
-    <article className={`card overflow-hidden ${open ? 'border-danger/40 ring-1 ring-danger/20' : ''}`}>
-      <div className="flex items-start gap-3 p-4">
-        <MdWarning size={24} className={open ? 'shrink-0 text-danger' : 'shrink-0 text-muted'} aria-hidden />
+    <article className="overflow-hidden rounded-[20px] border border-danger/35 bg-white shadow-[0_0_0_3px_rgba(217,48,37,0.08)]">
+      <div className="flex items-start gap-3 px-4 pb-3 pt-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger" aria-hidden><MdWarning size={22} /></span>
         <div className="min-w-0">
-          <h2 className="font-semibold">{c.title || 'A post of you is on hold'}</h2>
-          <p className="mt-1 text-sm text-muted">{c.body}</p>
-          <div className="mt-2 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-danger/10 px-2 py-0.5 font-medium text-danger">{categoryLabel(c.category)}</span>
-            <span className="rounded-full bg-surface px-2 py-0.5 text-muted">{timeAgo(c.created_at)}</span>
+          <span className="inline-block rounded-full bg-danger px-2 py-0.5 text-[11px] font-bold tracking-wide text-white">NEEDS YOUR DECISION</span>
+          <h2 className="mt-2 font-semibold leading-snug">{c.title || 'A post of you is on hold'}</h2>
+          <p className="mt-1 text-sm leading-snug text-muted">{c.body}</p>
+          <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs">
+            <span className="rounded-full bg-danger/10 px-2.5 py-0.5 font-semibold text-danger">{categoryLabel(c.category)}</span>
+            <span className="rounded-full bg-surface px-2.5 py-0.5 text-muted">{timeAgo(c.created_at)}</span>
           </div>
         </div>
       </div>
-      {open && (
-        <div className="relative mx-4 overflow-hidden rounded-xl">
-          <AuthImage src={c.image_url} alt="The post that shows you" className="aspect-square w-full object-cover" blurred={!revealed} />
-          {!revealed && (
-            <button className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/30 text-sm font-medium text-white" onClick={() => setRevealed(true)}>
-              <MdVisibility size={28} aria-hidden /> Tap to view. It may be upsetting.
-            </button>
-          )}
-        </div>
-      )}
-      {open && c.caption && <p className="mx-4 mt-2 text-sm"><span className="text-muted">Caption: </span>{c.caption}</p>}
-      {open && c.reason && <p className="mx-4 mt-2 rounded-lg bg-surface p-2 text-xs text-muted"><b>Why we held it:</b> {c.reason}</p>}
-      <div className="p-4">
-        {open ? (
-          <div className="grid gap-2">
-            <button className="btn-danger py-3 text-base" disabled={!!busy} onClick={() => act('not_me')}>
-              <MdDeleteForever size={20} aria-hidden />{busy === 'not_me' ? 'Removing...' : 'Not me, take it down'}
-            </button>
-            <button className="btn-ghost py-3 text-base" disabled={!!busy} onClick={() => act('its_me')}>
-              <MdCheckCircle size={20} aria-hidden />{busy === 'its_me' ? 'Allowing...' : 'It\'s me, allow'}
-            </button>
-          </div>
-        ) : (
-          <p className={`text-sm font-medium ${RESOLVED[c.status]?.tone ?? ''}`}>{RESOLVED[c.status]?.text}</p>
+      <div className="relative mx-4 overflow-hidden rounded-2xl">
+        <AuthImage src={c.image_url} alt="The post that shows you" className="aspect-square w-full object-cover" blurred={!revealed} />
+        {!revealed && (
+          <button className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/35 text-white" onClick={() => setRevealed(true)}>
+            <MdVisibility size={28} aria-hidden />
+            <span className="text-[15px] font-semibold">Tap to view</span>
+            <span className="text-[13px]">It may be upsetting</span>
+          </button>
         )}
+      </div>
+      <div className="space-y-2.5 px-4 pt-3.5">
+        {c.caption && (
+          <div>
+            <p className="text-xs font-semibold text-muted">Caption</p>
+            <p className="mt-0.5 text-[15px] leading-snug [overflow-wrap:anywhere]">{c.caption}</p>
+          </div>
+        )}
+        {c.reason && <p className="rounded-xl bg-gray-50 px-3 py-2.5 text-[13px] leading-snug text-gray-700"><b>Why we held it:</b> {c.reason}</p>}
+      </div>
+      <div className="grid gap-2.5 p-4">
+        <button className="btn-danger min-h-13 text-base" disabled={!!busy} onClick={() => act('not_me')}>
+          <MdDeleteForever size={20} aria-hidden />{busy === 'not_me' ? 'Removing...' : 'Not me, take it down'}
+        </button>
+        <button className="btn-ghost min-h-13 text-base" disabled={!!busy} onClick={() => act('its_me')}>
+          <MdCheckCircle size={20} className="text-success" aria-hidden />{busy === 'its_me' ? 'Allowing...' : 'It\'s me, allow'}
+        </button>
       </div>
     </article>
   )
