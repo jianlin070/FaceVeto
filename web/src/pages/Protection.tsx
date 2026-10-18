@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MdVerifiedUser, MdShield } from 'react-icons/md'
+import { MdArrowBack, MdVerifiedUser, MdShield } from 'react-icons/md'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { toast } from '../lib/toast'
@@ -25,7 +25,10 @@ export default function Protection() {
 
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-lg font-semibold">Face protection</h1>
+      <div className="-ml-2 flex items-center gap-1">
+        <Link to="/profile" className="icon-btn" aria-label="Back to profile"><MdArrowBack size={22} /></Link>
+        <h1 className="text-lg font-semibold">Face protection</h1>
+      </div>
       <div className={`card flex items-center gap-4 p-4 ${active ? 'border-success' : ''}`}>
         {active ? <MdVerifiedUser size={40} className="text-success" aria-hidden /> : <MdShield size={40} className="text-muted" aria-hidden />}
         <div>

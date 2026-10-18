@@ -1,30 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import {
-  MdAdminPanelSettings, MdHome, MdLogout, MdNotifications, MdOutlineHome, MdOutlineNotifications, MdOutlineShield,
-  MdShield, MdVolumeUp,
-} from 'react-icons/md'
-import { useAuth } from '../lib/auth'
+import { MdHome, MdNotifications, MdOutlineHome, MdOutlineNotifications, MdPerson, MdPersonOutline } from 'react-icons/md'
 import { notificationHref, useLiveNotifications } from '../lib/notifications'
-import { playChime, setSoundEnabled, soundEnabled, unlockAudioOnFirstGesture } from '../lib/sound'
+import { playChime, unlockAudioOnGesture } from '../lib/sound'
 import type { Notification } from '../lib/types'
-import Avatar from './Avatar'
 import HeadsUp from './HeadsUp'
-import Menu, { MenuItem } from './Menu'
 
 /** The "Lepak" social app: phone-width, friendly, bottom navigation. */
 export default function AppShell() {
-  const { me, signOut } = useAuth()
   const nav = useNavigate()
   const { pathname } = useLocation()
   const [headsUp, setHeadsUp] = useState<Notification | null>(null)
-  const [sound, setSound] = useState(soundEnabled)
 
-  useEffect(unlockAudioOnFirstGesture, [])
-  const unread = useLiveNotifications((n) => {
-    playChime()
-    if (pathname !== '/alerts') setHeadsUp(n) // the Alerts page already shows it
-  })
+  useEffect(unlockAudioOnGesture, [])
+  const unread = useLiveNotifications((n) => { playChime(); setHeadsUp(n) })
   const dismiss = useCallback(() => setHeadsUp(null), [])
 
   useEffect(() => {
@@ -32,52 +21,31 @@ export default function AppShell() {
     return () => { document.title = 'FaceVeto' }
   }, [unread])
 
-  const tab = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5 text-xs ${isActive ? 'font-semibold text-ink' : 'text-muted'}`
+  // Face protection and enrolment live under Profile.
+  const inProfile = ['/profile', '/settings', '/enrol'].some((p) => pathname.startsWith(p))
+  const tab = (active: boolean) =>
+    `flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5 text-xs ${active ? 'font-semibold text-ink' : 'text-muted'}`
   const pill = (active: boolean) => `relative flex h-8 w-16 items-center justify-center rounded-full transition ${active ? 'bg-primary/12 text-primary' : ''}`
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-[420px] flex-col bg-white shadow-sm">
       {headsUp && <HeadsUp note={headsUp} onDismiss={dismiss} onOpen={() => { nav(notificationHref(headsUp)); dismiss() }} />}
       <header className="sticky top-0 z-20 border-b border-line bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="flex h-14 items-center justify-between pl-4 pr-2">
+        <div className="flex h-14 items-center px-4">
           <NavLink to="/feed" className="flex items-center gap-2" aria-label="Lepak home">
             <img src="/favicon.svg" alt="" className="h-7 w-7" />
             <span className="text-xl font-bold tracking-tight">Lepak</span>
             <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-muted">protected by FaceVeto</span>
           </NavLink>
-          <Menu label="Account menu" className="rounded-full p-1 transition hover:bg-surface"
-            trigger={<Avatar name={me?.display_name ?? ''} handle={me?.handle ?? ''} size={34} />}>
-            {(close) => (
-              <>
-                <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-                  <Avatar name={me?.display_name ?? ''} handle={me?.handle ?? ''} size={36} />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{me?.display_name}</p>
-                    <p className="truncate text-xs text-muted">@{me?.handle}</p>
-                  </div>
-                </div>
-                <MenuItem icon={<MdVolumeUp />} checked={sound}
-                  onSelect={() => { setSoundEnabled(!sound); setSound(!sound); if (!sound) playChime() }}>
-                  Notification sound
-                </MenuItem>
-                <MenuItem icon={<MdShield />} onSelect={() => { close(); nav('/settings/protection') }}>Face protection</MenuItem>
-                {me?.is_admin && (
-                  <MenuItem icon={<MdAdminPanelSettings />} onSelect={() => { close(); nav('/admin') }}>Admin console</MenuItem>
-                )}
-                <MenuItem icon={<MdLogout />} onSelect={async () => { close(); await signOut(); nav('/') }}>Sign out</MenuItem>
-              </>
-            )}
-          </Menu>
         </div>
       </header>
       <main className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))]"><Outlet /></main>
       <nav aria-label="Main"
         className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[420px] -translate-x-1/2 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <NavLink to="/feed" className={tab}>
+        <NavLink to="/feed" className={({ isActive }) => tab(isActive)}>
           {({ isActive }) => <><span className={pill(isActive)}>{isActive ? <MdHome size={24} /> : <MdOutlineHome size={24} />}</span>Feed</>}
         </NavLink>
-        <NavLink to="/alerts" className={tab}>
+        <NavLink to="/alerts" className={({ isActive }) => tab(isActive)}>
           {({ isActive }) => (
             <>
               <span className={pill(isActive)}>
@@ -92,8 +60,8 @@ export default function AppShell() {
             </>
           )}
         </NavLink>
-        <NavLink to="/settings/protection" className={tab}>
-          {({ isActive }) => <><span className={pill(isActive)}>{isActive ? <MdShield size={24} /> : <MdOutlineShield size={24} />}</span>Protection</>}
+        <NavLink to="/profile" className={tab(inProfile)} aria-current={inProfile ? 'page' : undefined}>
+          <span className={pill(inProfile)}>{inProfile ? <MdPerson size={24} /> : <MdPersonOutline size={24} />}</span>Profile
         </NavLink>
       </nav>
     </div>

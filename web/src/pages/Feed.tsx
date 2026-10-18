@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { MdChevronRight, MdShield } from 'react-icons/md'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -22,21 +22,20 @@ function PostSkeleton() {
 
 export default function Feed() {
   const { me } = useAuth()
-  const [tab, setTab] = useState<'feed' | 'mine'>('feed')
+  const nav = useNavigate()
   const [posts, setPosts] = useState<Post[] | null>(null)
 
-  const load = useCallback(async (which: 'feed' | 'mine') => {
-    setPosts(null)
+  const load = useCallback(async () => {
     try {
-      setPosts(await api<Post[]>(which === 'feed' ? '/api/feed' : '/api/posts/mine'))
+      setPosts(await api<Post[]>('/api/feed'))
     } catch { setPosts([]) }
   }, [])
 
-  useEffect(() => { load(tab) }, [tab, load])
+  useEffect(() => { load() }, [load])
 
   function changed(p: Post) {
-    // A post that went back under review leaves the public feed but stays in "My posts".
-    setPosts((xs) => xs && (tab === 'feed' && p.status !== 'published' ? xs.filter((x) => x.post_id !== p.post_id) : xs.map((x) => x.post_id === p.post_id ? p : x)))
+    // A post that went back under review leaves the public feed; it stays on the author's profile.
+    setPosts((xs) => xs && (p.status !== 'published' ? xs.filter((x) => x.post_id !== p.post_id) : xs.map((x) => x.post_id === p.post_id ? p : x)))
   }
 
   return (
@@ -48,22 +47,13 @@ export default function Feed() {
           <MdChevronRight size={22} className="shrink-0" aria-hidden />
         </Link>
       )}
-      <Composer onPosted={(s) => { if (s !== 'published') setTab('mine'); load(s !== 'published' || tab === 'mine' ? 'mine' : 'feed') }} />
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 flex border-b border-line bg-white/90 backdrop-blur" role="tablist">
-        {(['feed', 'mine'] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-            className={`relative flex-1 py-3 text-sm font-medium transition ${tab === t ? 'text-ink' : 'text-muted hover:bg-surface'}`}>
-            {t === 'feed' ? 'For you' : 'My posts'}
-            {tab === t && <span className="absolute inset-x-1/3 bottom-0 h-[3px] rounded-full bg-primary" aria-hidden />}
-          </button>
-        ))}
-      </div>
+      <Composer onPosted={(s) => { if (s === 'published') load(); else nav('/profile') }} />
       {posts === null ? (
         <div role="status" aria-label="Loading posts"><PostSkeleton /><PostSkeleton /></div>
       ) : posts.length === 0 ? (
-        <p className="p-10 text-center text-sm text-muted">{tab === 'feed' ? 'Nothing here yet. Be the first to post.' : 'You have not posted yet.'}</p>
+        <p className="p-10 text-center text-sm text-muted">Nothing here yet. Be the first to post.</p>
       ) : posts.map((p) => (
-        <PostCard key={p.post_id} post={p} showStatus={tab === 'mine'} onChange={changed}
+        <PostCard key={p.post_id} post={p} onChange={changed}
           onDelete={(id) => setPosts((xs) => xs && xs.filter((x) => x.post_id !== id))} />
       ))}
     </div>

@@ -14,6 +14,7 @@ import AdminShell from './components/AdminShell'
 import Enrol from './pages/Enrol'
 import Protection from './pages/Protection'
 import Alerts from './pages/Alerts'
+import Profile from './pages/Profile'
 import Demo, { DemoGo } from './pages/Demo'
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/feed" element={<Feed />} />
               <Route path="/enrol" element={<Enrol />} />
               <Route path="/alerts" element={<Alerts />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/settings/protection" element={<Protection />} />
             </Route>
             <Route element={<RequireAdmin />}>
