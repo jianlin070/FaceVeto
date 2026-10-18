@@ -18,7 +18,7 @@ function open(who: string, size: string) {
 export default function Demo() {
   return (
     <div className="mx-auto max-w-3xl p-5">
-      <Link to="/" className="flex items-center gap-2 font-semibold"><img src="/favicon.svg" alt="" className="h-7 w-7" /> FaceVeto</Link>
+      <Link to="/" className="flex items-center gap-2.5 text-lg font-bold tracking-tight"><img src="/favicon.svg" alt="" className="h-8 w-8" /><span>Face<span className="text-primary">Veto</span></span></Link>
       <h1 className="mt-6 text-2xl font-bold">Demo guide</h1>
       <p className="mt-1 text-muted">Open the three windows and arrange them side by side. Every window has its own login.</p>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
