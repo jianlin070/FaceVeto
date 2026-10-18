@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 
 PROJECT=faceveto-2026
 REGION=asia-southeast1
-URL=https://faceveto-2026.web.app
+URL=https://faceveto.web.app
 LOGS=$(mktemp -d "${TMPDIR:-/tmp}/faceveto-ship.XXXXXX")
 HEAD_SHA=$(git rev-parse --short HEAD)
 ALL=${1:-}
@@ -48,7 +48,7 @@ if [ $deploy_web = yes ]; then
 fi
 if [ $deploy_api = yes ]; then
   step "Deploy API (Cloud Run)"; run deploy-api make deploy-api
-  ok "$(grep -Eo 'revision \[[^]]*\]' "$LOGS/deploy-api.log" | tr -d '[]' | sed 's/\x1b\[[0-9;]*m//g' | head -1)"
+  ok "$(sed 's/\x1b\[[0-9;]*m//g' "$LOGS/deploy-api.log" | grep -Eo 'revision \[[^]]*\]' | tr -d '[]' | head -1)"
 fi
 if [ $deploy_web = yes ]; then
   step "Deploy web (Hosting)"; run deploy-web firebase deploy --only hosting --project $PROJECT; ok

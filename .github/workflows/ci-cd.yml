@@ -12,7 +12,7 @@ env:
   WIF_PROVIDER: projects/387046116425/locations/global/workloadIdentityPools/github/providers/faceveto-repo
   DEPLOYER: github-deployer@faceveto-2026.iam.gserviceaccount.com
   RUNTIME_SA: faceveto-api@faceveto-2026.iam.gserviceaccount.com
-  LIVE_URL: https://faceveto-2026.web.app
+  LIVE_URL: https://faceveto.web.app
 
 jobs:
   changes:

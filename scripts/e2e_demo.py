@@ -1,6 +1,6 @@
 """End-to-end check against a running FaceVeto API (default: the deployed URL).
 
-    FACEVETO_URL=https://faceveto-2026.web.app api/.venv/bin/python scripts/e2e_demo.py
+    FACEVETO_URL=https://faceveto.web.app api/.venv/bin/python scripts/e2e_demo.py
 
 Uses dedicated test accounts and LFW faces. Cleans up after itself: templates deleted, test posts removed.
 """

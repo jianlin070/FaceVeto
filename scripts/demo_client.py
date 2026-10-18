@@ -6,7 +6,7 @@ import os
 
 import httpx
 
-BASE = os.environ.get("FACEVETO_URL", "https://faceveto-2026.web.app")
+BASE = os.environ.get("FACEVETO_URL", "https://faceveto.web.app")
 FIREBASE_API_KEY = "AIzaSyCxCx_ZclegsoFMj_UkvjHbB9OTPA5OdbA"  # public web config
 
 
