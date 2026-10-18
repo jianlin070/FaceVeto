@@ -88,7 +88,7 @@ See [`eval/RESULTS.md`](eval/RESULTS.md) for the full table, caveats and how to 
 
 ## Local development
 
-Requirements: Python 3.11, Node 22, gcloud and Firebase CLIs, Application Default Credentials for a project with Firestore and Vertex AI.
+Requirements: Python 3.11, Node 22, gcloud and Firebase CLIs, Application Default Credentials for a project with Firestore and Vertex AI. New teammates: follow [`docs/SETUP.md`](docs/SETUP.md) for a step by step setup from a fresh machine.
 
 ```bash
 python3.11 -m venv api/.venv && api/.venv/bin/pip install -r api/requirements-dev.txt
