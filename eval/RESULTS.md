@@ -22,7 +22,7 @@ Measured on 18 Oct 2026. Raw outputs are in `eval/results/*.json`.
 | Gemini cost per assessment | about $0.003 (2,017 input + 381 output tokens) | Vertex AI price $0.75 / $3.75 per 1M tokens |
 | Cost per 1,000 scans | **about $0.03** at a 1% match rate; $2.94 if every post matched | only matched posts call Gemini |
 | Spoof attempts blocked (printed photo, screen replay) | to be measured by the team | manual, 10 attempts each, see below |
-| End-to-end checks on the live URL | 33 / 33 pass | `scripts/e2e_demo.py` |
+| End-to-end checks on the live URL | 35 / 35 pass | `scripts/e2e_demo.py` |
 
 ## Notes and caveats
 

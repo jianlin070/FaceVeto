@@ -83,6 +83,8 @@ def main():
     case, secs = wait_case(owner, held_id)
     check("owner sees the case within 3 s", case is not None and secs <= 3, f"{secs:.1f} s, category={case and case['category']}")
     check("owner can view held image", owner.get(f"/api/media/{held_id}").status_code == 200)
+    check("held post page: poster opens own, owner gets 404 (poster stays hidden)",
+          poster.get(f"/api/posts/{held_id}").status_code == 200 and owner.get(f"/api/posts/{held_id}").status_code == 404)
     feed_ids = {p["post_id"] for p in poster.get("/api/feed").json()}
     check("held post is not in the feed", held_id not in feed_ids)
     not_me_case = case and case["case_id"]
@@ -111,6 +113,8 @@ def main():
     check("owner gets an FYI notification", any(n["type"] == "fyi_appearance" and n["post_id"] == r.json().get("post_id") for n in notes))
 
     fyi_id = r.json().get("post_id")
+    r_open = owner.get(f"/api/posts/{fyi_id}")
+    check("owner opens the live post from the FYI alert", r_open.status_code == 200 and r_open.json().get("status") == "published")
     r = poster.patch(f"/api/posts/{fyi_id}", json={"caption": "Happy birthday! See you at dinner tonight"})
     check("harmless caption edit stays live", r.status_code == 200 and r.json()["status"] == "published", r.text[:120])
     r = poster.patch(f"/api/posts/{fyi_id}", json={"caption": "DAFTAR SEKARANG! Free kredit RM50, menang RM5k sehari. PM for agent link wa.me/60123456789"})
