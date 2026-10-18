@@ -13,7 +13,7 @@ The prototype simulates a social app called **Lepak** with FaceVeto built in.
 1. Open https://faceveto-2026.web.app/demo and click the three buttons to open **Alice** (protected user), **Bob** (a 3 day old account) and **Admin** (trust & safety console) side by side. Each browser tab keeps its own login.
 2. **Use your own face:** in a new tab, create an account and complete the live face check. Then, as Bob, pick a selfie of yourself, choose **Test: betting ad** in the banner menu and post it.
 3. Bob only sees "Under review". Your Alerts tab shows the held post within seconds. Tap **Not me** or **It's me**.
-4. In the Admin window, open the case: match score, Gemini's category, quoted evidence, reasoning, timeline, and a generated evidence pack.
+4. In the Admin window, the overview shows held posts and takedowns over time. Open the review queue and the case: match score, Gemini's category, quoted evidence, reasoning, timeline, and a generated evidence pack.
 5. As Bob, post the same selfie with **Harmless: birthday**: it goes live and you get an FYI instead.
 
 ## How it works
@@ -95,9 +95,9 @@ Deploy:
 
 ```bash
 bash scripts/setup_gcp.sh      # one time: APIs, bucket, service account, rules, indexes
-make deploy                    # Cloud Run API + Firebase Hosting
+make ship                      # tests, deploys only what changed (API and/or web), checks the live site
 api/.venv/bin/python scripts/seed.py --posts          # demo users and feed posts
-api/.venv/bin/python scripts/e2e_demo.py              # end-to-end check against the live URL
+api/.venv/bin/python scripts/e2e_demo.py              # end-to-end check against the live URL (make ship runs it after API deploys)
 ```
 
 Configuration is by environment variables (`GEMINI_MODEL`, `MATCH_THRESHOLD`, `DUP_THRESHOLD`, `MATCH_BACKEND=firestore|memory`, `DEMO_MODE`, ...). See `api/app/config.py`.
