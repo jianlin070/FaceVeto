@@ -28,9 +28,9 @@ If a protected face appears in a harmless post, it goes live and the person gets
 
 Editing a caption runs the same check again, because new wording can turn a harmless photo into a scam or betting ad. Earlier "It's me" approvals do not carry over to the new text. Text-only posts have no face to protect and publish straight away. Posts under review cannot be edited or deleted until a decision is made.
 
-![FaceVeto architecture on Google Cloud](docs/architecture.png)
+![FaceVeto architecture on Google Cloud](docs/architecture.svg)
 
-Numbered steps follow one post through the system. Solid lines are live in the deployed prototype; dashed lines are the production roadmap or paused. The source is [`docs/architecture.drawio`](docs/architecture.drawio): open it in [diagrams.net](https://app.diagrams.net) to edit, then export to `docs/architecture.png`.
+Numbered steps follow one post through the system. Solid lines are live in the deployed prototype; dashed lines are the production roadmap or paused. The source is [`docs/architecture.drawio`](docs/architecture.drawio): open it in [diagrams.net](https://app.diagrams.net) to edit, then export the animated `docs/architecture.svg` and the still [`docs/architecture.png`](docs/architecture.png) (for slides).
 
 ### Google Cloud services
 - **Cloud Run** for the API (one service, modules `enrolment`, `scan`, `agent`, `cases`, `admin`).
