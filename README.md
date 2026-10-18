@@ -30,7 +30,7 @@ Editing a caption runs the same check again, because new wording can turn a harm
 
 ![FaceVeto architecture on Google Cloud](docs/architecture.png)
 
-Solid lines are live in the deployed prototype; dashed lines are the production roadmap. Regenerate with `python scripts/architecture_diagram.py` (needs Graphviz and the `diagrams` package).
+Numbered steps follow one post through the system. Solid lines are live in the deployed prototype; dashed lines are the production roadmap or paused. The source is [`docs/architecture.drawio`](docs/architecture.drawio): open it in [diagrams.net](https://app.diagrams.net) to edit, then export to `docs/architecture.png`.
 
 ### Google Cloud services
 - **Cloud Run** for the API (one service, modules `enrolment`, `scan`, `agent`, `cases`, `admin`).
