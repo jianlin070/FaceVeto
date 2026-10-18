@@ -52,7 +52,8 @@ export default function Landing() {
   const introDone = useCallback(() => setIntro('done'), [])
   const showContent = intro !== 'play'
 
-  if (fbUser && me?.profile_complete) return <Navigate to={me.is_admin ? '/admin' : '/feed'} replace />
+  // Signed-in people, admins included, land in the app; admins open the console from Profile.
+  if (fbUser && me?.profile_complete) return <Navigate to="/feed" replace />
 
   async function go(d: (typeof DEMO)[number]) {
     setBusy(d.who)
