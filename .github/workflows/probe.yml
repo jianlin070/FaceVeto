@@ -1,0 +1,15 @@
+name: Probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo plain
+  b:
+    runs-on: ubuntu-latest
+    concurrency: { group: probe-b, cancel-in-progress: false }
+    permissions: { contents: read, id-token: write }
+    steps:
+      - run: echo perms
