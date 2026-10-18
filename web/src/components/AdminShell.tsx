@@ -8,7 +8,7 @@ export default function AdminShell() {
   const nav = useNavigate()
   return (
     <div className="min-h-screen bg-surface">
-      <header className="bg-ink text-white">
+      <header className="bg-ink pt-[env(safe-area-inset-top)] text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <Link to="/admin" className="flex items-center gap-2 font-semibold">
             <img src="/favicon.svg" alt="" className="h-7 w-7" /> FaceVeto <span className="font-normal text-gray-400">Trust & Safety</span>

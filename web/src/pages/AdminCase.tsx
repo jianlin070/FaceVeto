@@ -95,11 +95,11 @@ export default function AdminCasePage() {
         <h1 className="text-2xl font-bold tracking-tight">{categoryLabel(c.category)}</h1>
         <RiskBadge severity={c.severity} />
         <CaseStatusPill status={c.status} postStatus={c.post.status} large />
-        <span className="text-sm text-muted">Case {c.case_id} · opened {timeAgo(c.created_at)}</span>
+        <span className="text-sm text-muted [overflow-wrap:anywhere]">Case {c.case_id} · opened {timeAgo(c.created_at)}</span>
       </div>
       <div role="status" className={`rounded-2xl border-l-4 px-4 py-3 text-sm ${BANNER[tone]}`}>{summary(c, me?.uid)}</div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <section className="card space-y-3 p-4" aria-label="Post">
           <div className="relative overflow-hidden rounded-xl">
             <AuthImage src={c.post.image_url} alt="Post under review" className="w-full object-contain" placeholderClassName="aspect-square" blurred={!revealed} />
@@ -156,7 +156,7 @@ export default function AdminCasePage() {
           {s.agent_trace && s.agent_trace.length > 0 && (
             <section className="card p-4" aria-label="Agent trace">
               <h2 className="flex items-center gap-2 font-semibold"><MdSmartToy className="text-primary" aria-hidden /> Agent trace <span className="text-xs font-normal text-muted">Google ADK, {s.agent_ms} ms</span></h2>
-              <ol className="mt-2 space-y-1 font-mono text-xs">
+              <ol className="mt-2 space-y-1 font-mono text-xs [overflow-wrap:anywhere]">
                 {s.agent_trace.map((t, i) => (
                   <li key={i} className={t.step === 'error' || t.step === 'fallback' ? 'text-danger' : ''}>
                     <span className="text-muted">{t.at_ms != null ? `${(t.at_ms / 1000).toFixed(1)}s ` : ''}</span>
