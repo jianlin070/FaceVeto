@@ -41,7 +41,6 @@ Numbered steps follow one post through the system. Solid lines are live in the d
 - **Cloud Build / Artifact Registry** for source deploys, **Cloud Logging** for structured JSON logs.
 - **BigQuery** for trust and safety analytics: a Cloud Logging sink exports the API's structured logs (decisions, harm categories, latency, owner responses; never faces, embeddings, tokens or images). Example queries are in [`eval/analytics.sql`](eval/analytics.sql).
 - **Cloud Monitoring** uptime check on the live `/api/healthz` endpoint.
-- **IAM Workload Identity Federation** for keyless deploys from GitHub Actions (workflow in `.github/workflows`, currently paused).
 
 ## AI design
 
