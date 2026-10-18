@@ -9,6 +9,7 @@ import Signup from './pages/Signup'
 import Onboarding from './pages/Onboarding'
 import Feed from './pages/Feed'
 import Admin from './pages/Admin'
+import AdminQueue from './pages/AdminQueue'
 import AdminCasePage from './pages/AdminCase'
 import AdminShell from './components/AdminShell'
 import Enrol from './pages/Enrol'
@@ -40,6 +41,7 @@ export default function App() {
             <Route element={<RequireAdmin />}>
               <Route element={<AdminShell />}>
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/queue" element={<AdminQueue />} />
                 <Route path="/admin/cases/:id" element={<AdminCasePage />} />
               </Route>
             </Route>

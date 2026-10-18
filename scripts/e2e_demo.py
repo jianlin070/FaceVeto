@@ -7,6 +7,7 @@ Uses dedicated test accounts and LFW faces. Cleans up after itself: templates de
 import json
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -141,7 +142,7 @@ def main():
 
     try:
         admin = client("admin")
-        stats = admin.get("/api/admin/stats")
+        stats = admin.get("/api/admin/stats", params={"since": (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()})
         check("admin stats reachable", stats.status_code == 200, stats.text[:160])
         check("non-admin blocked from admin API", poster.get("/api/admin/cases").status_code == 403)
         open_cases = admin.get("/api/admin/cases", params={"status": "awaiting_owner"}).json()

@@ -1,16 +1,17 @@
-"""Trust & safety console: review queue, case detail, actions, evidence pack, stats."""
+"""Trust & safety console: review queue, case detail, actions, evidence pack, overview stats."""
 import html
-import statistics
+from datetime import datetime, timedelta, timezone
 
 import markdown
 from fastapi import APIRouter, Depends, HTTPException, Response
 from google.cloud import firestore
 
+from app.admin.insights import overview
 from app.audit import audit
 from app.auth import User, require_admin
 from app.cases.actions import publish_post, remove_post
 from app.cases.evidence import case_facts, generate_evidence
-from app.db import SERVER_TS, age_days, get_db
+from app.db import SERVER_TS, age_days, get_db, now
 from app.models import AdminActionIn
 from app.scan.pipeline import notify
 
@@ -38,26 +39,54 @@ def _handle(uid: str, cache: dict) -> str:
     return cache[uid]
 
 
+def _docs(collection: str, ids) -> dict[str, dict]:
+    """Fetch many documents in one round trip. Missing ones come back as {}."""
+    db = get_db()
+    refs = [db.collection(collection).document(i) for i in dict.fromkeys(ids)]
+    return {s.id: s.to_dict() or {} for s in db.get_all(refs)} if refs else {}
+
+
 @router.get("/cases")
-def queue(status: str | None = None, limit: int = 50, _: User = Depends(require_admin)):
+def queue(status: str | None = None, limit: int = 100, _: User = Depends(require_admin)):
     q = get_db().collection("cases")
     if status:
         if status not in STATUSES:
             raise HTTPException(422, "Unknown status")
         q = q.where(filter=firestore.FieldFilter("status", "==", status))
     q = q.order_by("created_at", direction=firestore.Query.DESCENDING).limit(min(limit, 100))
-    handles: dict = {}
-    out = []
-    for c in q.stream():
-        d = c.to_dict()
-        out.append({
-            "case_id": c.id, "post_id": d["post_id"], "status": d["status"], "category": d["category"],
-            "severity": d["severity"], "confidence": d.get("confidence"), "similarity": d.get("similarity"),
-            "created_at": _iso(d.get("created_at")), "owner_handle": _handle(d["owner_uid"], handles),
-            "poster_handle": _handle(d["poster_uid"], handles),
-            "owner_response": (d.get("owner_response") or {}).get("value"),
-        })
-    return out
+    cases = [(c.id, c.to_dict()) for c in q.stream()]
+    posts = _docs("posts", [d["post_id"] for _, d in cases])
+    users = _docs("users", [u for _, d in cases for u in (d["owner_uid"], d["poster_uid"])])
+    handle = lambda uid: users.get(uid, {}).get("handle", uid)  # noqa: E731
+    return [{
+        "case_id": cid, "post_id": d["post_id"], "status": d["status"], "category": d["category"],
+        "severity": d["severity"], "confidence": d.get("confidence"), "similarity": d.get("similarity"),
+        "created_at": _iso(d.get("created_at")), "owner_handle": handle(d["owner_uid"]),
+        "poster_handle": handle(d["poster_uid"]),
+        "owner_response": (d.get("owner_response") or {}).get("value"),
+        "caption": posts.get(d["post_id"], {}).get("caption", ""),
+        "post_status": posts.get(d["post_id"], {}).get("status"),
+    } for cid, d in cases]
+
+
+def poster_cases(poster_uid: str, exclude_post: str, limit: int = 10) -> dict:
+    """The poster's other held posts, newest first, one row per post, for the reviewer's context."""
+    db = get_db()
+    # Equality only, so no composite index; a poster has few cases, sorted here.
+    snaps = db.collection("cases").where(filter=firestore.FieldFilter("poster_uid", "==", poster_uid)).limit(200).stream()
+    newest: dict[str, tuple[str, dict]] = {}
+    for s in snaps:
+        d = s.to_dict()
+        if d["post_id"] == exclude_post:
+            continue
+        if d["post_id"] not in newest or d["created_at"] > newest[d["post_id"]][1]["created_at"]:
+            newest[d["post_id"]] = (s.id, d)
+    rows = sorted(newest.values(), key=lambda x: x[1]["created_at"], reverse=True)
+    posts = _docs("posts", [d["post_id"] for _, d in rows[:limit]])
+    return {"total": len(rows), "cases": [{
+        "case_id": cid, "status": d["status"], "category": d["category"], "created_at": _iso(d.get("created_at")),
+        "caption": posts.get(d["post_id"], {}).get("caption", ""), "post_status": posts.get(d["post_id"], {}).get("status"),
+    } for cid, d in rows[:limit]]}
 
 
 @router.get("/cases/{case_id}")
@@ -95,6 +124,7 @@ def case_detail(case_id: str, _: User = Depends(require_admin)):
                                               "gemini_latency_ms", "gemini_error", "agent_ms", "agent_trace")},
         },
         "timeline": timeline,
+        "poster_cases": poster_cases(c["poster_uid"], c["post_id"]),
     }
 
 
@@ -151,32 +181,43 @@ table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #ccc;padding
     return {"case": case_facts(case_id), "report_md": md}
 
 
-def _pct(values: list[float], p: float):
-    if not values:
-        return None
-    v = sorted(values)
-    return v[min(len(v) - 1, int(round(p * (len(v) - 1))))]
+@router.get("/waiting")
+def waiting(_: User = Depends(require_admin)):
+    """Held posts nobody has decided on yet: the console's badge and headline number."""
+    held = [p.to_dict() for p in get_db().collection("posts")
+            .where(filter=firestore.FieldFilter("status", "==", "held")).select(["created_at", "is_test"]).stream()]
+    times = [p["created_at"] for p in held if not p.get("is_test") and p.get("created_at")]
+    return {"count": len(times), "oldest_at": _iso(min(times)) if times else None}
+
+
+MAX_RANGE = timedelta(days=92)
 
 
 @router.get("/stats")
-def stats(_: User = Depends(require_admin)):
+def stats(since: datetime, _: User = Depends(require_admin)):
+    """Overview for [since, now] plus the same length before it for comparison.
+
+    The browser sends `since` as the start of its first chart bucket in local time, so days line up
+    with the admin's calendar rather than UTC.
+    """
+    end = now()
+    since = since if since.tzinfo else since.replace(tzinfo=timezone.utc)
+    if not end - MAX_RANGE <= since < end:
+        raise HTTPException(422, "since must be within the last 92 days")
+    prev_since = since - (end - since)
     db = get_db()
-    posts = [p.to_dict() for p in db.collection("posts")
-             .order_by("created_at", direction=firestore.Query.DESCENDING).limit(500).stream()]
-    posts = [p for p in posts if not p.get("is_test")]
-    counts = {s: sum(1 for p in posts if p.get("status") == s) for s in ("published", "held", "removed")}
-    released = sum(1 for p in posts if p.get("released_at"))
-    # Text-only posts skip the face scan, so they would flatter the latency numbers.
-    scans = [p["scan"] for p in posts if p.get("has_image", True) and (p.get("scan") or {}).get("latency_ms") is not None]
-    lat = [s["latency_ms"] for s in scans]
-    gem = [s["gemini_latency_ms"] for s in scans if s.get("gemini_latency_ms")]
-    held_ever = sum(1 for p in posts if (p.get("decision") or {}).get("action") == "hold")
-    return {
-        "posts_scanned": len(scans), "published": counts["published"], "held": counts["held"],
-        "removed": counts["removed"], "released": released, "held_total": held_ever,
-        "gemini_calls": len(gem),
-        "scan_latency_ms": {"p50": _pct(lat, 0.5), "p95": _pct(lat, 0.95),
-                            "mean": round(statistics.mean(lat)) if lat else None},
-        "gemini_latency_ms": {"p50": _pct(gem, 0.5), "p95": _pct(gem, 0.95)},
-    }
+    after = firestore.FieldFilter("created_at", ">=", prev_since)
+    posts = [{"id": p.id, **p.to_dict()} for p in db.collection("posts").where(filter=after).select(
+        ["created_at", "decision", "assessment.category", "status", "scan", "has_image", "is_test"]).stream()]
+    cases = [{"id": c.id, **c.to_dict()} for c in db.collection("cases").where(filter=after).select(
+        ["post_id", "owner_uid", "poster_uid", "category", "severity", "status", "created_at",
+         "owner_response", "admin_action"]).stream()]
+    out = overview(posts, cases, since, prev_since)
+    users = _docs("users", [p["uid"] for p in out["posters"]] + [t["uid"] for t in out["targets"]])
+    for row in out["posters"]:
+        u = users.get(row.pop("uid"), {})
+        row.update(handle=u.get("handle", "unknown"), account_age_days=age_days(u.get("created_at")))
+    for row in out["targets"]:
+        row["handle"] = users.get(row.pop("uid"), {}).get("handle", "unknown")
+    return out
 

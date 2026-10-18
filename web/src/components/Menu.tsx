@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 /** Popup menu following the WAI-ARIA menu button pattern: Escape closes, arrow keys move, outside tap closes. */
-export default function Menu({ label, trigger, children, className = 'icon-btn' }: {
-  label: string; trigger: ReactNode; className?: string; children: (close: () => void) => ReactNode
+export default function Menu({ label, trigger, children, className = 'icon-btn', panelClassName = 'right-0 origin-top-right' }: {
+  label: string; trigger: ReactNode; className?: string; panelClassName?: string; children: (close: () => void) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -34,7 +34,7 @@ export default function Menu({ label, trigger, children, className = 'icon-btn' 
       </button>
       {open && (
         <div role="menu" aria-label={label}
-          className="absolute right-0 top-full z-30 mt-1 min-w-52 origin-top-right animate-fade-in overflow-hidden rounded-2xl border border-line bg-white py-1 shadow-xl">
+          className={`absolute top-full z-30 mt-1 min-w-52 animate-fade-in overflow-hidden rounded-2xl border border-line bg-white py-1 shadow-xl ${panelClassName}`}>
           {children(() => setOpen(false))}
         </div>
       )}
