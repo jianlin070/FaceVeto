@@ -137,3 +137,23 @@ def my_posts(user: User = Depends(require_user)):
          .order_by("created_at", direction=firestore.Query.DESCENDING).limit(40))
     posts = [(d.id, d.to_dict()) for d in q.stream()]
     return [post_out(i, d, user.uid) for i, d in posts if d.get("status") != "deleted"][:30]
+
+
+def can_open_post(post: dict, user: User) -> bool:
+    """Who can open a single post page.
+
+    Live posts: anyone signed in. Your own post: you, unless deleted. Admins: anything.
+    Held posts stay out for everyone else, including the protected person, who decides on them
+    from the alert card without ever learning who posted.
+    """
+    if user.is_admin or post.get("status") == "published":
+        return True
+    return post.get("author_uid") == user.uid and post.get("status") != "deleted"
+
+
+@router.get("/posts/{post_id}", response_model=PostOut)
+def get_post(post_id: str, user: User = Depends(require_user)):
+    snap = get_db().collection("posts").document(post_id).get()
+    if not snap.exists or not can_open_post(snap.to_dict(), user):
+        raise HTTPException(404, "This post is no longer available")  # same answer as missing, so nothing leaks
+    return post_out(snap.id, snap.to_dict(), user.uid)

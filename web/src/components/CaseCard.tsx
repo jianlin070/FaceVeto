@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MdVisibility, MdCheckCircle, MdDeleteForever, MdWarning } from 'react-icons/md'
+import { Link } from 'react-router-dom'
+import { MdVisibility, MdCheckCircle, MdChevronRight, MdDeleteForever, MdWarning } from 'react-icons/md'
 import type { OwnerCase } from '../lib/types'
 import { categoryLabel, timeAgo } from '../lib/format'
 import AuthImage from './AuthImage'
@@ -29,6 +30,11 @@ export default function CaseCard({ c, onRespond }: { c: OwnerCase; onRespond: (i
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{categoryLabel(c.category)} · {timeAgo(c.created_at)}</p>
           {r && <p className={`mt-1 inline-block rounded-xl px-2.5 py-1 text-xs font-medium ${r.pill}`}>{r.text}</p>}
+          {(c.status === 'owner_its_me' || c.status === 'released') && (
+            <Link to={`/posts/${c.post_id}`} className="mt-2 flex items-center gap-0.5 text-sm font-semibold text-primary">
+              View post<MdChevronRight size={18} aria-hidden />
+            </Link>
+          )}
         </div>
       </article>
     )

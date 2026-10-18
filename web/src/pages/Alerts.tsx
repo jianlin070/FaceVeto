@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { collection, onSnapshot, query, where } from 'firebase/firestore'
-import { MdInfoOutline, MdNotificationsNone, MdShield } from 'react-icons/md'
+import { MdChevronRight, MdInfoOutline, MdNotificationsNone, MdShield } from 'react-icons/md'
 import { db } from '../lib/firebase'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -78,21 +78,30 @@ export default function Alerts() {
       {fyis.length > 0 && (
         <section aria-label="Updates" className="overflow-hidden rounded-[20px] border border-line bg-white">
           <h2 className="px-4 pb-1.5 pt-3.5 text-[13px] font-semibold text-muted">Updates</h2>
-          {fyis.map((n) => (
-            <div key={n.id} id={`note-${n.id}`} className={`flex gap-3 border-t border-surface px-4 py-3 ${ring(`note-${n.id}`)}`}>
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${n.type === 'case_update' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`} aria-hidden>
-                {n.type === 'case_update' ? <MdShield size={18} /> : <MdInfoOutline size={18} />}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{n.title}</p>
-                <p className="mt-0.5 text-[13px] leading-snug text-muted">{n.body}</p>
-                <p className="mt-1 text-xs text-gray-500">{timeAgo(n.created_at)}</p>
-              </div>
-              {n.type === 'fyi_appearance' && n.post_id && (
-                <AuthImage src={`/api/media/${n.post_id}`} alt="The post you appear in" className="h-13 w-13 shrink-0 rounded-xl object-cover text-[0px]" />
-              )}
-            </div>
-          ))}
+          {fyis.map((n) => {
+            // Updates about a post open it; the post page itself decides whether it can still be shown.
+            const cls = `flex items-center gap-3 border-t border-surface px-4 py-3 ${ring(`note-${n.id}`)}`
+            const body = (
+              <>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${n.type === 'case_update' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`} aria-hidden>
+                  {n.type === 'case_update' ? <MdShield size={18} /> : <MdInfoOutline size={18} />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{n.title}</p>
+                  <p className="mt-0.5 text-[13px] leading-snug text-muted">{n.body}</p>
+                  <p className="mt-1 text-xs text-gray-500">{timeAgo(n.created_at)}</p>
+                </div>
+                {n.type === 'fyi_appearance' && n.post_id && (
+                  <AuthImage src={`/api/media/${n.post_id}`} alt="The post you appear in" className="h-13 w-13 shrink-0 rounded-xl object-cover text-[0px]" />
+                )}
+              </>
+            )
+            return n.post_id ? (
+              <Link key={n.id} id={`note-${n.id}`} to={`/posts/${n.post_id}`} className={`${cls} hover:bg-surface active:bg-surface`}>
+                {body}<MdChevronRight size={20} className="shrink-0 text-muted" aria-hidden />
+              </Link>
+            ) : <div key={n.id} id={`note-${n.id}`} className={cls}>{body}</div>
+          })}
         </section>
       )}
       {closed.length > 0 && <h2 className="px-1 pt-2 text-[13px] font-semibold text-muted">Resolved</h2>}
