@@ -115,4 +115,4 @@ Demo users are consenting team members. Automated tests and evaluations use the 
 
 ## Team
 
-FaceVeto team, Google Cloud AI Builder Cup 2026.
+Sintax Aeral, Google Cloud AI Builder Cup 2026.
